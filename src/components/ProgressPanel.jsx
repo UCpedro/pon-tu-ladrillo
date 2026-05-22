@@ -60,13 +60,13 @@ export default function ProgressPanel({ stats }) {
         {cards.map((c) => (
           <div
             key={c.label}
-            className="rounded-xl bg-tp-cream p-4 border border-stone-200"
+            className="rounded-xl bg-tp-cream p-4 border border-stone-200 min-w-0"
           >
             <dt className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
               {c.label}
             </dt>
             <dd
-              className={`font-display font-bold text-2xl sm:text-3xl mt-1 ${c.accent}`}
+              className={`font-display font-bold text-lg sm:text-xl lg:text-2xl mt-1 tracking-tight tabular-nums leading-tight break-all ${c.accent}`}
             >
               {c.value}
             </dd>

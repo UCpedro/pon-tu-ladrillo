@@ -47,7 +47,7 @@ export default function Hero({
             </button>
           </div>
 
-          <dl className="mt-10 grid grid-cols-3 gap-4 max-w-lg">
+          <dl className="mt-10 grid grid-cols-3 gap-x-3 gap-y-4 max-w-xl">
             <Stat label="Recaudado" value={formatCLP(stats.raised)} />
             <Stat
               label="Avance del salón"
@@ -128,12 +128,12 @@ export default function Hero({
 
 function Stat({ label, value, accent }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
         {label}
       </dt>
       <dd
-        className={`font-display font-bold text-2xl sm:text-3xl mt-1 ${
+        className={`font-display font-bold text-base sm:text-lg lg:text-xl xl:text-2xl mt-1 tracking-tight tabular-nums leading-tight break-all ${
           accent ? 'text-tp-red' : 'text-tp-blue-dark'
         }`}
       >

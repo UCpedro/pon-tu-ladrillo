@@ -14,12 +14,13 @@ import ProgressPanel from './components/ProgressPanel.jsx'
 import DonationTiers from './components/DonationTiers.jsx'
 import DonorList from './components/DonorList.jsx'
 import DonationForm from './components/DonationForm.jsx'
-import CompanyDonationForm from './components/CompanyDonationForm.jsx'
+import TransferModal from './components/TransferModal.jsx'
 
 export default function App() {
   const [donors, setDonors] = useState([])
   const [selectedTierId, setSelectedTierId] = useState(null)
   const [flashPartId, setFlashPartId] = useState(null)
+  const [pendingDonation, setPendingDonation] = useState(null)
   const formRef = useRef(null)
 
   // Cargar donaciones existentes + suscribirse a nuevas
@@ -104,7 +105,9 @@ export default function App() {
     )
   }
 
-  const handleRegisterDonation = async ({
+  // Abre el modal de transferencia. Devuelve una promise que se resuelve
+  // cuando el usuario confirma con comprobante, o rechaza si cancela.
+  const handleRegisterDonation = ({
     name,
     message,
     amount,
@@ -112,35 +115,61 @@ export default function App() {
     isCompany,
     logoFile,
   }) => {
-    if (!tierId) return
-    const target = findNextPartForTier(tierId, { isCompany: !!isCompany })
-    if (!target) return // tier completo
+    return new Promise((resolve, reject) => {
+      if (!tierId) {
+        reject(new Error('Tier inválido'))
+        return
+      }
+      const target = findNextPartForTier(tierId, { isCompany: !!isCompany })
+      if (!target) {
+        reject(new Error('No hay piezas disponibles'))
+        return
+      }
+      const numericAmount = Number(amount)
+      if (!numericAmount || numericAmount <= 0) {
+        reject(new Error('Monto inválido'))
+        return
+      }
+      setPendingDonation({
+        name,
+        message,
+        amount: numericAmount,
+        isCompany: !!isCompany,
+        logoFile: logoFile || null,
+        targetPart: target,
+        resolve,
+        reject,
+      })
+    })
+  }
 
-    const numericAmount = Number(amount)
-    if (!numericAmount || numericAmount <= 0) return
-
+  const handleConfirmTransfer = async (receiptFile) => {
+    const pd = pendingDonation
+    if (!pd) return
     try {
       const saved = await createDonation(
         {
-          partId: target.id,
-          name,
-          message,
-          amount: numericAmount,
-          isCompany: !!isCompany,
+          partId: pd.targetPart.id,
+          name: pd.name,
+          message: pd.message,
+          amount: pd.amount,
+          isCompany: pd.isCompany,
         },
-        logoFile || null
+        pd.logoFile,
+        receiptFile
       )
 
       setDonors((prev) =>
         prev.some((d) => d.id === saved.id) ? prev : [saved, ...prev]
       )
-      setFlashPartId(target.id)
+      setFlashPartId(pd.targetPart.id)
       setTimeout(() => {
         const el = document.getElementById('modelo')
-        if (el)
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 50)
       setTimeout(() => setFlashPartId(null), 5000)
+      pd.resolve(saved)
+      setPendingDonation(null)
     } catch (err) {
       console.error('[App] No se pudo registrar la donación:', err)
       if (typeof window !== 'undefined') {
@@ -148,6 +177,14 @@ export default function App() {
           'No se pudo registrar tu aporte. Verifica tu conexión e intenta de nuevo.'
         )
       }
+      throw err
+    }
+  }
+
+  const handleCancelTransfer = () => {
+    if (pendingDonation) {
+      pendingDonation.reject(new Error('Cancelado'))
+      setPendingDonation(null)
     }
   }
 
@@ -247,18 +284,40 @@ export default function App() {
             title="¿Tu empresa quiere ser parte del salón?"
             subtitle="Las empresas que aporten desde $250.000 verán su logo en el modelo 3D del salón, sobre la pieza apadrinada."
           />
-          <div className="mt-6">
-            <CompanyDonationForm
-              tiers={tiers}
-              parts={partsWithStatus}
-              onSubmit={handleRegisterDonation}
-            />
+          <div className="mt-6 relative">
+            <div className="tp-card p-8 sm:p-10 grayscale opacity-60 pointer-events-none select-none">
+              <div className="flex flex-col items-center text-center gap-3">
+                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-stone-200 text-3xl">
+                  🏢
+                </span>
+                <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-600">
+                  Donaciones de empresas
+                </h3>
+                <p className="text-slate-500 max-w-md text-sm">
+                  Pronto las empresas podrán apadrinar paneles o piezas de
+                  techo del salón y dejar su logo visible en el modelo 3D.
+                </p>
+              </div>
+            </div>
+            <div className="absolute top-4 right-4 inline-flex items-center gap-2 rounded-full bg-amber-100 border border-amber-300 px-4 py-2 text-amber-800 font-bold text-sm uppercase tracking-wider shadow-tp-soft">
+              <span className="inline-block h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              Próximamente
+            </div>
           </div>
         </section>
 
       </main>
 
       <Footer />
+
+      {/* Modal de transferencia bancaria */}
+      {pendingDonation && (
+        <TransferModal
+          donation={pendingDonation}
+          onConfirm={handleConfirmTransfer}
+          onCancel={handleCancelTransfer}
+        />
+      )}
     </div>
   )
 }

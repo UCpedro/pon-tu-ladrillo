@@ -157,29 +157,78 @@ export const donationParts = [
     hasWindow: true,
   },
   // Muros laterales
+  // ── Muros laterales · cada lado dividido en 3 paneles de 2m ──────────────
   {
     id: 'P7',
-    name: 'Panel P7 · Lateral oeste',
-    description: 'Costado largo del salón, con ventana hacia el sol poniente.',
+    name: 'Panel P7 · Lateral oeste (trasero)',
+    description: 'Tercio trasero del muro lateral oeste.',
+    tier: 'panel',
+    price: 250000,
+    shape: 'side-panel',
+    position: [-5, 1.6, -2],
+    rotation: [0, 0, 0],
+    size: [0.15, 3, 2],
+    color: WOOD,
+  },
+  {
+    id: 'P8',
+    name: 'Panel P8 · Lateral oeste (centro)',
+    description: 'Sección central del muro lateral oeste, con ventana hacia el sol poniente.',
     tier: 'panel',
     price: 250000,
     shape: 'side-panel',
     position: [-5, 1.6, 0],
     rotation: [0, 0, 0],
-    size: [0.15, 3, 6],
+    size: [0.15, 3, 2],
     color: WOOD,
     hasWindow: true,
   },
   {
-    id: 'P8',
-    name: 'Panel P8 · Lateral este',
-    description: 'Costado largo donde se apoyan cocina y baño.',
+    id: 'P9',
+    name: 'Panel P9 · Lateral oeste (frontal)',
+    description: 'Tercio frontal del muro lateral oeste.',
+    tier: 'panel',
+    price: 250000,
+    shape: 'side-panel',
+    position: [-5, 1.6, 2],
+    rotation: [0, 0, 0],
+    size: [0.15, 3, 2],
+    color: WOOD,
+  },
+  {
+    id: 'P10',
+    name: 'Panel P10 · Lateral este (trasero)',
+    description: 'Tercio trasero del muro lateral este.',
+    tier: 'panel',
+    price: 250000,
+    shape: 'side-panel',
+    position: [5, 1.6, -2],
+    rotation: [0, 0, 0],
+    size: [0.15, 3, 2],
+    color: WOOD,
+  },
+  {
+    id: 'P11',
+    name: 'Panel P11 · Lateral este (centro)',
+    description: 'Sección central del muro lateral este.',
     tier: 'panel',
     price: 250000,
     shape: 'side-panel',
     position: [5, 1.6, 0],
     rotation: [0, 0, 0],
-    size: [0.15, 3, 6],
+    size: [0.15, 3, 2],
+    color: WOOD,
+  },
+  {
+    id: 'P12',
+    name: 'Panel P12 · Lateral este (frontal)',
+    description: 'Tercio frontal del muro lateral este.',
+    tier: 'panel',
+    price: 250000,
+    shape: 'side-panel',
+    position: [5, 1.6, 2],
+    rotation: [0, 0, 0],
+    size: [0.15, 3, 2],
     color: WOOD,
   },
 
@@ -259,56 +308,10 @@ export const donationParts = [
     color: GLASS,
   },
 
-  // ── TECHO (4 secciones) ──────────────────────────────────────────────────
-  // Aguas sur (+Z) y norte (-Z). Cumbrera a lo largo del eje X.
-  {
-    id: 'T1',
-    name: 'Techo T1 · Agua sur, sector izquierdo',
-    description: 'Plancha de zinc sobre el salón principal.',
-    tier: 'techo',
-    price: 250000,
-    shape: 'roof',
-    position: [-2.5, 4.1, 1.5],
-    rotation: [ROOF_TILT, 0, 0],
-    size: [5, 0.1, 3.606],
-    color: ZINC,
-  },
-  {
-    id: 'T2',
-    name: 'Techo T2 · Agua sur, sector derecho',
-    description: 'Plancha de zinc sobre la cocina y el baño.',
-    tier: 'techo',
-    price: 250000,
-    shape: 'roof',
-    position: [2.5, 4.1, 1.5],
-    rotation: [ROOF_TILT, 0, 0],
-    size: [5, 0.1, 3.606],
-    color: ZINC,
-  },
-  {
-    id: 'T3',
-    name: 'Techo T3 · Agua norte, sector izquierdo',
-    description: 'Plancha de zinc del agua norte sobre el salón.',
-    tier: 'techo',
-    price: 250000,
-    shape: 'roof',
-    position: [-2.5, 4.1, -1.5],
-    rotation: [-ROOF_TILT, 0, 0],
-    size: [5, 0.1, 3.606],
-    color: ZINC,
-  },
-  {
-    id: 'T4',
-    name: 'Techo T4 · Agua norte, sector derecho',
-    description: 'Plancha de zinc del agua norte sobre el baño.',
-    tier: 'techo',
-    price: 250000,
-    shape: 'roof',
-    position: [2.5, 4.1, -1.5],
-    rotation: [-ROOF_TILT, 0, 0],
-    size: [5, 0.1, 3.606],
-    color: ZINC,
-  },
+  // ── TECHO · 12 secciones (cada agua dividida en 6 → 3 por cada mitad) ────
+  // Aguas sur (+Z, rotación positiva) y norte (-Z, rotación negativa).
+  // Cumbrera a lo largo del eje X. Cada sección es 10/6 ≈ 1.667 m en X.
+  ...buildRoof(),
 
   // ── HASTIALES (paneles triangulares entre muros laterales y techo) ───────
   {
@@ -341,6 +344,45 @@ export const donationParts = [
 
 // (Sin ladrillos: el campaign sigue llamándose "Pon tu ladrillo" como metáfora,
 // pero ya no hay piezas físicas tipo ladrillo en el modelo 3D.)
+
+function buildRoof() {
+  const pieces = []
+  const segmentWidth = 10 / 6 // 1.667 m por segmento en X
+  const xCenters = [0, 1, 2, 3, 4, 5].map(
+    (k) => -5 + segmentWidth / 2 + k * segmentWidth
+  )
+  // Agua sur (z = +1.5, rotación +ROOF_TILT)
+  xCenters.forEach((x, i) => {
+    pieces.push({
+      id: `T${i + 1}`,
+      name: `Techo T${i + 1} · Agua sur, sector ${i + 1}`,
+      description: 'Plancha de zinc del agua sur del techo.',
+      tier: 'techo',
+      price: 250000,
+      shape: 'roof',
+      position: [x, 4.1, 1.5],
+      rotation: [ROOF_TILT, 0, 0],
+      size: [segmentWidth, 0.1, 3.606],
+      color: ZINC,
+    })
+  })
+  // Agua norte (z = -1.5, rotación -ROOF_TILT)
+  xCenters.forEach((x, i) => {
+    pieces.push({
+      id: `T${i + 7}`,
+      name: `Techo T${i + 7} · Agua norte, sector ${i + 1}`,
+      description: 'Plancha de zinc del agua norte del techo.',
+      tier: 'techo',
+      price: 250000,
+      shape: 'roof',
+      position: [x, 4.1, -1.5],
+      rotation: [-ROOF_TILT, 0, 0],
+      size: [segmentWidth, 0.1, 3.606],
+      color: ZINC,
+    })
+  })
+  return pieces
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Donantes de ejemplo (precargados en el primer render)

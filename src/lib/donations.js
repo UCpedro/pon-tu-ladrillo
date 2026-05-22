@@ -13,6 +13,7 @@ function rowToDonor(row) {
     timestamp: row.created_at,
     isCompany: !!row.is_company,
     logoDataUrl: row.logo_url || null,
+    receiptUrl: row.receipt_url || null,
   }
 }
 
@@ -56,14 +57,46 @@ async function uploadLogo(file) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// createDonation — inserta una donación (y sube el logo si corresponde)
+// uploadReceipt — sube el comprobante de transferencia al bucket "comprobantes"
 // ────────────────────────────────────────────────────────────────────────────
-export async function createDonation(donation, logoFile = null) {
+async function uploadReceipt(file) {
+  if (!supabase || !file) return null
+  const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase()
+  const rand = Math.random().toString(36).slice(2, 10)
+  const path = `comp-${Date.now()}-${rand}.${ext}`
+  const { error: uploadError } = await supabase.storage
+    .from('comprobantes')
+    .upload(path, file, {
+      contentType: file.type || 'application/octet-stream',
+      cacheControl: '3600',
+      upsert: false,
+    })
+  if (uploadError) {
+    console.error('[donations] upload receipt error:', uploadError)
+    throw uploadError
+  }
+  const { data } = supabase.storage.from('comprobantes').getPublicUrl(path)
+  return data.publicUrl
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// createDonation — inserta una donación (sube logo y comprobante si vienen)
+// ────────────────────────────────────────────────────────────────────────────
+export async function createDonation(
+  donation,
+  logoFile = null,
+  receiptFile = null
+) {
   if (!supabase) throw new Error('Supabase no está configurado')
 
   let logoUrl = null
   if (donation.isCompany && logoFile) {
     logoUrl = await uploadLogo(logoFile)
+  }
+
+  let receiptUrl = null
+  if (receiptFile) {
+    receiptUrl = await uploadReceipt(receiptFile)
   }
 
   const id = `d-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -75,6 +108,7 @@ export async function createDonation(donation, logoFile = null) {
     amount: Number(donation.amount) || 0,
     is_company: !!donation.isCompany,
     logo_url: logoUrl,
+    receipt_url: receiptUrl,
   }
   const { data, error } = await supabase
     .from('donations')

@@ -246,7 +246,10 @@ export default function DonationForm({
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="tp-label" htmlFor="donor-name">
-                Tu nombre
+                Tu nombre{' '}
+                <span className="text-slate-400 font-normal text-xs">
+                  (dejar en blanco para anónimo)
+                </span>
               </label>
               <input
                 id="donor-name"

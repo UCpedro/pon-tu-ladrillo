@@ -235,10 +235,14 @@ function getLogoTransform(part) {
       }
     }
     case 'roof': {
-      // Cara superior del techo. En coords locales, +Y es la cara visible.
+      // Cara superior del techo. En aguas norte (rotación X negativa) el
+      // logo queda "al revés" porque image-up apunta hacia los aleros;
+      // sumamos π de rotación en Z para girar 180° en el plano.
+      const rotX = part.rotation?.[0] || 0
+      const northSlope = rotX < 0
       return {
         pos: [0, sy / 2 + 0.04, 0],
-        rot: [-Math.PI / 2, 0, 0],
+        rot: [-Math.PI / 2, 0, northSlope ? Math.PI : 0],
         size: [Math.min(sx * 0.5, 2.6), Math.min(sz * 0.4, 1.8)],
       }
     }
