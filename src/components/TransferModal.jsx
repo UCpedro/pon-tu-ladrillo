@@ -11,12 +11,12 @@ const TRANSFER_DATA = {
   correo: 'donaciones.uc@uc.cl',
 }
 
-const TRANSFER_TEXT = `Banco: ${TRANSFER_DATA.banco}
-Nombre: ${TRANSFER_DATA.nombre}
+const TRANSFER_TEXT = `Nombre: ${TRANSFER_DATA.nombre}
 RUT: ${TRANSFER_DATA.rut}
-Tipo de cuenta: ${TRANSFER_DATA.tipoCuenta}
+Banco: ${TRANSFER_DATA.banco}
 N° de cuenta: ${TRANSFER_DATA.numeroCuenta}
-Correo: ${TRANSFER_DATA.correo}`
+Correo: ${TRANSFER_DATA.correo}
+Tipo de cuenta: ${TRANSFER_DATA.tipoCuenta}`
 
 const MAX_RECEIPT_BYTES = 3 * 1024 * 1024 // 3 MB
 
@@ -136,12 +136,12 @@ export default function TransferModal({ donation, onConfirm, onCancel }) {
 
         {/* Datos bancarios */}
         <div className="mt-5 rounded-xl bg-tp-cream border border-stone-200 p-4 space-y-2">
-          <DataRow label="Banco" value={TRANSFER_DATA.banco} />
           <DataRow label="Nombre" value={TRANSFER_DATA.nombre} />
           <DataRow label="RUT" value={TRANSFER_DATA.rut} />
-          <DataRow label="Tipo de cuenta" value={TRANSFER_DATA.tipoCuenta} />
+          <DataRow label="Banco" value={TRANSFER_DATA.banco} />
           <DataRow label="N° de cuenta" value={TRANSFER_DATA.numeroCuenta} />
           <DataRow label="Correo" value={TRANSFER_DATA.correo} />
+          <DataRow label="Tipo de cuenta" value={TRANSFER_DATA.tipoCuenta} />
         </div>
 
         <button
