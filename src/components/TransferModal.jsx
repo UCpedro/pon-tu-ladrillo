@@ -3,8 +3,8 @@ import { formatCLP } from '../utils/format.js'
 
 // Datos bancarios para la transferencia
 const TRANSFER_DATA = {
-  banco: 'Banco: Itau',
-  nombre: 'Pontificia Universidad Católica de Chile',
+  banco: 'Banco Itau',
+  nombre: 'PUC',
   rut: '81.698.900-0',
   tipoCuenta: 'Cuenta Corriente',
   numeroCuenta: '231392483',
