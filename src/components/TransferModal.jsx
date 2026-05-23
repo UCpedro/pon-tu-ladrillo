@@ -99,13 +99,14 @@ export default function TransferModal({ donation, onConfirm, onCancel }) {
   const part = donation?.targetPart
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !submitting) onCancel?.()
-      }}
-    >
-      <div className="tp-card max-w-lg w-full p-6 sm:p-8 my-8 tp-pop relative">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm overflow-y-auto overscroll-contain">
+      <div
+        className="min-h-full flex items-start sm:items-center justify-center p-3 sm:p-4"
+        onClick={(e) => {
+          if (e.target === e.currentTarget && !submitting) onCancel?.()
+        }}
+      >
+        <div className="tp-card max-w-lg w-full p-5 sm:p-8 my-3 sm:my-6 tp-pop relative">
         {/* Botón cerrar */}
         <button
           type="button"
@@ -297,6 +298,7 @@ export default function TransferModal({ donation, onConfirm, onCancel }) {
           Tu aporte queda registrado cuando subas el comprobante. La
           organización lo verificará y aparecerá en el modelo del salón.
         </p>
+        </div>
       </div>
     </div>
   )
