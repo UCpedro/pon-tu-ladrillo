@@ -21,6 +21,7 @@ Tipo de cuenta: ${TRANSFER_DATA.tipoCuenta}`
 const MAX_RECEIPT_BYTES = 3 * 1024 * 1024 // 3 MB
 
 export default function TransferModal({ donation, onConfirm, onCancel }) {
+  const [step, setStep] = useState(1) // 1 = datos transferencia, 2 = comprobante
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [rut, setRut] = useState('')
@@ -118,9 +119,11 @@ export default function TransferModal({ donation, onConfirm, onCancel }) {
           ✕
         </button>
 
-        <span className="tp-eyebrow">Casi listo</span>
+        <span className="tp-eyebrow">
+          Paso {step} de 2
+        </span>
         <h2 className="font-display text-2xl sm:text-3xl font-bold text-tp-blue-dark mt-1">
-          Realiza tu transferencia
+          {step === 1 ? 'Realiza tu transferencia' : 'Confirma tu aporte'}
         </h2>
         <p className="text-slate-600 text-sm mt-2">
           Aporte de{' '}
@@ -134,170 +137,206 @@ export default function TransferModal({ donation, onConfirm, onCancel }) {
           )}
         </p>
 
-        {/* Datos bancarios */}
-        <div className="mt-5 rounded-xl bg-tp-cream border border-stone-200 p-4 space-y-2">
-          <DataRow label="Nombre" value={TRANSFER_DATA.nombre} />
-          <DataRow label="RUT" value={TRANSFER_DATA.rut} />
-          <DataRow label="Banco" value={TRANSFER_DATA.banco} />
-          <DataRow label="N° de cuenta" value={TRANSFER_DATA.numeroCuenta} />
-          <DataRow label="Correo" value={TRANSFER_DATA.correo} />
-          <DataRow label="Tipo de cuenta" value={TRANSFER_DATA.tipoCuenta} />
-        </div>
+        {step === 1 && (
+          <>
+            <p className="text-sm text-slate-600 mt-4">
+              Copia los datos, haz la transferencia desde tu banco y luego
+              continúa al siguiente paso.
+            </p>
 
-        <button
-          type="button"
-          onClick={handleCopy}
-          className={`mt-3 w-full rounded-full px-4 py-2.5 text-sm font-bold transition ${
-            copied
-              ? 'bg-emerald-500 text-white'
-              : 'bg-tp-blue text-white hover:bg-tp-blue-dark'
-          }`}
-        >
-          {copied ? '✓ Datos copiados al portapapeles' : '📋 Copiar datos'}
-        </button>
-
-        {/* Datos del aportante (para verificar la transferencia) */}
-        <div className="mt-6 space-y-3">
-          <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
-            Datos de quien transfiere
-          </p>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div>
-              <label className="tp-label" htmlFor="transfer-first-name">
-                Nombre *
-              </label>
-              <input
-                id="transfer-first-name"
-                type="text"
-                className="tp-input"
-                placeholder="Ej: María"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                maxLength={60}
-                autoComplete="given-name"
-              />
+            {/* Datos bancarios */}
+            <div className="mt-4 rounded-xl bg-tp-cream border border-stone-200 p-4 space-y-2">
+              <DataRow label="Nombre" value={TRANSFER_DATA.nombre} />
+              <DataRow label="RUT" value={TRANSFER_DATA.rut} />
+              <DataRow label="Banco" value={TRANSFER_DATA.banco} />
+              <DataRow label="N° de cuenta" value={TRANSFER_DATA.numeroCuenta} />
+              <DataRow label="Correo" value={TRANSFER_DATA.correo} />
+              <DataRow label="Tipo de cuenta" value={TRANSFER_DATA.tipoCuenta} />
             </div>
-            <div>
-              <label className="tp-label" htmlFor="transfer-last-name">
-                Apellido *
-              </label>
-              <input
-                id="transfer-last-name"
-                type="text"
-                className="tp-input"
-                placeholder="Ej: González"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                maxLength={60}
-                autoComplete="family-name"
-              />
+
+            <button
+              type="button"
+              onClick={handleCopy}
+              className={`mt-3 w-full rounded-full px-4 py-2.5 text-sm font-bold transition ${
+                copied
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-tp-blue text-white hover:bg-tp-blue-dark'
+              }`}
+            >
+              {copied ? '✓ Datos copiados al portapapeles' : '📋 Copiar datos'}
+            </button>
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="flex-1 rounded-full px-6 py-3 font-semibold text-slate-600 bg-white border border-stone-300 hover:bg-stone-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="flex-1 tp-btn-primary"
+              >
+                Siguiente paso →
+              </button>
             </div>
-          </div>
-          <div>
-            <label className="tp-label" htmlFor="transfer-rut">
-              RUT *
-            </label>
-            <input
-              id="transfer-rut"
-              type="text"
-              className="tp-input"
-              placeholder="12.345.678-9"
-              value={rut}
-              onChange={(e) => setRut(e.target.value)}
-              maxLength={20}
-              inputMode="text"
-            />
-          </div>
-          <p className="text-[11px] text-slate-500">
-            Estos datos los usamos solo para verificar la transferencia con el
-            banco. No se muestran públicamente.
-          </p>
-        </div>
+          </>
+        )}
 
-        {/* Comprobante */}
-        <div className="mt-6">
-          <label
-            htmlFor="receipt-file"
-            className="tp-label flex items-center gap-2"
-          >
-            Subir comprobante de transferencia *
-          </label>
-          <p className="text-xs text-slate-500 mb-2">
-            Imagen (PNG/JPG) o PDF, máximo 3 MB.
-          </p>
+        {step === 2 && (
+          <>
+            <p className="text-sm text-slate-600 mt-4">
+              Ya hiciste la transferencia? Ingresa tus datos y sube el
+              comprobante para registrar tu aporte.
+            </p>
 
-          <label
-            htmlFor="receipt-file"
-            className={`group relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-5 cursor-pointer transition ${
-              receiptFile
-                ? 'border-emerald-300 bg-emerald-50'
-                : 'border-stone-300 bg-white hover:border-tp-blue/50 hover:bg-tp-blue/5'
-            }`}
-          >
-            <input
-              id="receipt-file"
-              type="file"
-              accept="image/*,application/pdf"
-              onChange={(e) => handleFile(e.target.files?.[0])}
-              className="sr-only"
-            />
-            {receiptFile ? (
-              <>
-                <span className="text-3xl">📄</span>
-                <p className="text-sm font-semibold text-emerald-700 text-center truncate max-w-full">
-                  {receiptFile.name}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {Math.round(receiptFile.size / 1024)} KB · Click para cambiar
-                </p>
-              </>
-            ) : (
-              <>
-                <span className="text-3xl text-slate-400">📤</span>
-                <p className="text-sm font-semibold text-tp-blue-dark">
-                  Subir comprobante
-                </p>
-                <p className="text-xs text-slate-500">
-                  Click para seleccionar archivo
-                </p>
-              </>
-            )}
-          </label>
-          {receiptError && (
-            <p className="text-xs text-tp-red mt-2">{receiptError}</p>
-          )}
-        </div>
+            {/* Datos del aportante */}
+            <div className="mt-5 space-y-3">
+              <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                Datos de quien transfiere
+              </p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="tp-label" htmlFor="transfer-first-name">
+                    Nombre *
+                  </label>
+                  <input
+                    id="transfer-first-name"
+                    type="text"
+                    className="tp-input"
+                    placeholder="Ej: María"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    maxLength={60}
+                    autoComplete="given-name"
+                  />
+                </div>
+                <div>
+                  <label className="tp-label" htmlFor="transfer-last-name">
+                    Apellido *
+                  </label>
+                  <input
+                    id="transfer-last-name"
+                    type="text"
+                    className="tp-input"
+                    placeholder="Ej: González"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    maxLength={60}
+                    autoComplete="family-name"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="tp-label" htmlFor="transfer-rut">
+                  RUT *
+                </label>
+                <input
+                  id="transfer-rut"
+                  type="text"
+                  className="tp-input"
+                  placeholder="12.345.678-9"
+                  value={rut}
+                  onChange={(e) => setRut(e.target.value)}
+                  maxLength={20}
+                  inputMode="text"
+                />
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Estos datos los usamos solo para verificar la transferencia
+                con el banco. No se muestran públicamente.
+              </p>
+            </div>
 
-        {/* Botones */}
-        <div className="mt-6 flex flex-col sm:flex-row gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={submitting}
-            className="flex-1 rounded-full px-6 py-3 font-semibold text-slate-600 bg-white border border-stone-300 hover:bg-stone-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={!canSubmit}
-            className="flex-1 tp-btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400"
-          >
-            {submitting
-              ? 'Enviando aporte…'
-              : !firstName.trim() || !lastName.trim() || !rut.trim()
-                ? 'Completa nombre, apellido y RUT'
-                : !receiptFile
-                  ? 'Subí el comprobante'
-                  : 'Confirmar aporte'}
-          </button>
-        </div>
+            {/* Comprobante */}
+            <div className="mt-6">
+              <label
+                htmlFor="receipt-file"
+                className="tp-label flex items-center gap-2"
+              >
+                Subir comprobante de transferencia *
+              </label>
+              <p className="text-xs text-slate-500 mb-2">
+                Imagen (PNG/JPG) o PDF, máximo 3 MB.
+              </p>
 
-        <p className="text-[11px] text-slate-500 text-center mt-4">
-          Tu aporte queda registrado cuando subas el comprobante. La
-          organización lo verificará y aparecerá en el modelo del salón.
-        </p>
+              <label
+                htmlFor="receipt-file"
+                className={`group relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-5 cursor-pointer transition ${
+                  receiptFile
+                    ? 'border-emerald-300 bg-emerald-50'
+                    : 'border-stone-300 bg-white hover:border-tp-blue/50 hover:bg-tp-blue/5'
+                }`}
+              >
+                <input
+                  id="receipt-file"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => handleFile(e.target.files?.[0])}
+                  className="sr-only"
+                />
+                {receiptFile ? (
+                  <>
+                    <span className="text-3xl">📄</span>
+                    <p className="text-sm font-semibold text-emerald-700 text-center truncate max-w-full">
+                      {receiptFile.name}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {Math.round(receiptFile.size / 1024)} KB · Click para
+                      cambiar
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-3xl text-slate-400">📤</span>
+                    <p className="text-sm font-semibold text-tp-blue-dark">
+                      Subir comprobante
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Click para seleccionar archivo
+                    </p>
+                  </>
+                )}
+              </label>
+              {receiptError && (
+                <p className="text-xs text-tp-red mt-2">{receiptError}</p>
+              )}
+            </div>
+
+            {/* Botones */}
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                disabled={submitting}
+                className="flex-1 rounded-full px-6 py-3 font-semibold text-slate-600 bg-white border border-stone-300 hover:bg-stone-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                ← Volver
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={!canSubmit}
+                className="flex-1 tp-btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
+                {submitting
+                  ? 'Enviando aporte…'
+                  : !firstName.trim() || !lastName.trim() || !rut.trim()
+                    ? 'Completa nombre, apellido y RUT'
+                    : !receiptFile
+                      ? 'Subí el comprobante'
+                      : 'Confirmar aporte'}
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-500 text-center mt-4">
+              Tu aporte queda registrado cuando subas el comprobante. La
+              organización lo verificará y aparecerá en el modelo del salón.
+            </p>
+          </>
+        )}
         </div>
       </div>
     </div>
