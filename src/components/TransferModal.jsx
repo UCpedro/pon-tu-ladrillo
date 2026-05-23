@@ -11,12 +11,14 @@ const TRANSFER_DATA = {
   correo: 'donaciones.uc@uc.cl',
 }
 
-const TRANSFER_TEXT = `Nombre: ${TRANSFER_DATA.nombre}
+// Texto exacto que se copia al portapapeles. NO modificar las etiquetas
+// — los bancos esperan este formato para detectar los datos.
+const TRANSFER_TEXT = `${TRANSFER_DATA.nombre}
 RUT: ${TRANSFER_DATA.rut}
-Banco: ${TRANSFER_DATA.banco}
-N° de cuenta: ${TRANSFER_DATA.numeroCuenta}
-Correo: ${TRANSFER_DATA.correo}
-Tipo de cuenta: ${TRANSFER_DATA.tipoCuenta}`
+${TRANSFER_DATA.banco}
+${TRANSFER_DATA.tipoCuenta}
+Numero de cuenta: ${TRANSFER_DATA.numeroCuenta}
+${TRANSFER_DATA.correo}`
 
 const MAX_RECEIPT_BYTES = 3 * 1024 * 1024 // 3 MB
 
