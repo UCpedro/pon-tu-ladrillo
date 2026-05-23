@@ -14,11 +14,11 @@ const TRANSFER_DATA = {
 // Texto exacto que se copia al portapapeles. NO modificar las etiquetas
 // — los bancos esperan este formato para detectar los datos.
 const TRANSFER_TEXT = `${TRANSFER_DATA.nombre}
+${TRANSFER_DATA.correo}
 RUT: ${TRANSFER_DATA.rut}
 ${TRANSFER_DATA.banco}
 ${TRANSFER_DATA.tipoCuenta}
-Numero de cuenta: ${TRANSFER_DATA.numeroCuenta}
-${TRANSFER_DATA.correo}`
+Numero de cuenta: ${TRANSFER_DATA.numeroCuenta}`
 
 const MAX_RECEIPT_BYTES = 3 * 1024 * 1024 // 3 MB
 
@@ -149,11 +149,11 @@ export default function TransferModal({ donation, onConfirm, onCancel }) {
             {/* Datos bancarios */}
             <div className="mt-4 rounded-xl bg-tp-cream border border-stone-200 p-4 space-y-2">
               <DataRow label="Nombre" value={TRANSFER_DATA.nombre} />
+              <DataRow label="Correo" value={TRANSFER_DATA.correo} />
               <DataRow label="RUT" value={TRANSFER_DATA.rut} />
               <DataRow label="Banco" value={TRANSFER_DATA.banco} />
-              <DataRow label="N° de cuenta" value={TRANSFER_DATA.numeroCuenta} />
-              <DataRow label="Correo" value={TRANSFER_DATA.correo} />
               <DataRow label="Tipo de cuenta" value={TRANSFER_DATA.tipoCuenta} />
+              <DataRow label="N° de cuenta" value={TRANSFER_DATA.numeroCuenta} />
             </div>
 
             <button
