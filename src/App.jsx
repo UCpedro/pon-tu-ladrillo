@@ -143,7 +143,12 @@ export default function App() {
     })
   }
 
-  const handleConfirmTransfer = async (receiptFile) => {
+  const handleConfirmTransfer = async ({
+    receiptFile,
+    firstName,
+    lastName,
+    rut,
+  }) => {
     const pd = pendingDonation
     if (!pd) return
     try {
@@ -154,6 +159,9 @@ export default function App() {
           message: pd.message,
           amount: pd.amount,
           isCompany: pd.isCompany,
+          transferFirstName: firstName,
+          transferLastName: lastName,
+          transferRut: rut,
         },
         pd.logoFile,
         receiptFile

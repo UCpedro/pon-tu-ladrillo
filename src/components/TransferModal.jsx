@@ -21,10 +21,20 @@ Correo: ${TRANSFER_DATA.correo}`
 const MAX_RECEIPT_BYTES = 3 * 1024 * 1024 // 3 MB
 
 export default function TransferModal({ donation, onConfirm, onCancel }) {
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [rut, setRut] = useState('')
   const [receiptFile, setReceiptFile] = useState(null)
   const [receiptError, setReceiptError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  const canSubmit =
+    !!receiptFile &&
+    !!firstName.trim() &&
+    !!lastName.trim() &&
+    !!rut.trim() &&
+    !submitting
 
   // Cerrar con tecla Escape
   useEffect(() => {
@@ -72,10 +82,15 @@ export default function TransferModal({ donation, onConfirm, onCancel }) {
   }
 
   const handleConfirm = async () => {
-    if (!receiptFile || submitting) return
+    if (!canSubmit) return
     setSubmitting(true)
     try {
-      await onConfirm(receiptFile)
+      await onConfirm({
+        receiptFile,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        rut: rut.trim(),
+      })
     } catch (e) {
       setSubmitting(false)
     }
@@ -139,6 +154,64 @@ export default function TransferModal({ donation, onConfirm, onCancel }) {
         >
           {copied ? '✓ Datos copiados al portapapeles' : '📋 Copiar datos'}
         </button>
+
+        {/* Datos del aportante (para verificar la transferencia) */}
+        <div className="mt-6 space-y-3">
+          <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
+            Datos de quien transfiere
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="tp-label" htmlFor="transfer-first-name">
+                Nombre *
+              </label>
+              <input
+                id="transfer-first-name"
+                type="text"
+                className="tp-input"
+                placeholder="Ej: María"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                maxLength={60}
+                autoComplete="given-name"
+              />
+            </div>
+            <div>
+              <label className="tp-label" htmlFor="transfer-last-name">
+                Apellido *
+              </label>
+              <input
+                id="transfer-last-name"
+                type="text"
+                className="tp-input"
+                placeholder="Ej: González"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                maxLength={60}
+                autoComplete="family-name"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="tp-label" htmlFor="transfer-rut">
+              RUT *
+            </label>
+            <input
+              id="transfer-rut"
+              type="text"
+              className="tp-input"
+              placeholder="12.345.678-9"
+              value={rut}
+              onChange={(e) => setRut(e.target.value)}
+              maxLength={20}
+              inputMode="text"
+            />
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Estos datos los usamos solo para verificar la transferencia con el
+            banco. No se muestran públicamente.
+          </p>
+        </div>
 
         {/* Comprobante */}
         <div className="mt-6">
@@ -207,10 +280,16 @@ export default function TransferModal({ donation, onConfirm, onCancel }) {
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={!receiptFile || submitting}
+            disabled={!canSubmit}
             className="flex-1 tp-btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400"
           >
-            {submitting ? 'Enviando aporte…' : 'Confirmar aporte'}
+            {submitting
+              ? 'Enviando aporte…'
+              : !firstName.trim() || !lastName.trim() || !rut.trim()
+                ? 'Completa nombre, apellido y RUT'
+                : !receiptFile
+                  ? 'Subí el comprobante'
+                  : 'Confirmar aporte'}
           </button>
         </div>
 

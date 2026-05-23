@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { formatCLP } from '../utils/format.js'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -46,13 +46,7 @@ export default function DonationForm({
     ? nextPart.price - nextPart.fundedAmount
     : 0
 
-  // Auto-sugerir el monto al elegir tipo
-  useEffect(() => {
-    if (selectedTier && !amount) {
-      // Sugerencia inicial = el monto que falta para completar la próxima pieza
-      setAmount(String(remainingForPart || selectedTier.price))
-    }
-  }, [selectedTierId]) // eslint-disable-line react-hooks/exhaustive-deps
+  // El monto NO se autorrellena — parte en blanco para que el donante lo edite.
 
   // % en vivo (sobre el costo TOTAL de UNA pieza del tipo)
   const numericAmount = Number(amount) || 0
@@ -139,9 +133,6 @@ export default function DonationForm({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
-                  Total: <strong>{formatCLP(t.price)}</strong>
-                </p>
-                <p className="text-[11px] text-slate-500">
                   {soldOut
                     ? '✓ Todas completas'
                     : `${stats.completed}/${stats.total} listas`}

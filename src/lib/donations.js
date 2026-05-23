@@ -109,6 +109,9 @@ export async function createDonation(
     is_company: !!donation.isCompany,
     logo_url: logoUrl,
     receipt_url: receiptUrl,
+    transfer_first_name: donation.transferFirstName?.trim() || null,
+    transfer_last_name: donation.transferLastName?.trim() || null,
+    transfer_rut: donation.transferRut?.trim() || null,
   }
   const { data, error } = await supabase
     .from('donations')
