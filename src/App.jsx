@@ -69,12 +69,10 @@ export default function App() {
     })
   }, [donors])
 
-  // Estadísticas globales — usa amount cap (no contar excedente al sobre-aportar)
+  // Estadísticas globales — "raised" suma TODOS los aportes reales recibidos
+  // (sin capear por pieza). El porcentaje del salón sí se capea a 100%.
   const stats = useMemo(() => {
-    const raised = partsWithStatus.reduce(
-      (sum, p) => sum + p.cappedAmount,
-      0
-    )
+    const raised = donors.reduce((sum, d) => sum + (d.amount || 0), 0)
     const donatedParts = partsWithStatus.filter((p) => p.donated).length
     const totalParts = partsWithStatus.length
     return {

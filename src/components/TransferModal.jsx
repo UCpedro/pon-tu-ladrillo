@@ -18,7 +18,7 @@ ${TRANSFER_DATA.correo}
 RUT: ${TRANSFER_DATA.rut}
 ${TRANSFER_DATA.banco}
 ${TRANSFER_DATA.tipoCuenta}
-Numero de cuenta: ${TRANSFER_DATA.numeroCuenta}`
+${TRANSFER_DATA.numeroCuenta}`
 
 const MAX_RECEIPT_BYTES = 3 * 1024 * 1024 // 3 MB
 
