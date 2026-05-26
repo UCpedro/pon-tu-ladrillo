@@ -36,7 +36,7 @@ export async function fetchDonations() {
 // ────────────────────────────────────────────────────────────────────────────
 // uploadLogo — sube un File al bucket "logos" y devuelve la URL pública
 // ────────────────────────────────────────────────────────────────────────────
-async function uploadLogo(file) {
+export async function uploadLogo(file) {
   if (!supabase || !file) return null
   const ext = (file.name?.split('.').pop() || 'png').toLowerCase()
   const rand = Math.random().toString(36).slice(2, 10)
@@ -59,7 +59,7 @@ async function uploadLogo(file) {
 // ────────────────────────────────────────────────────────────────────────────
 // uploadReceipt — sube el comprobante de transferencia al bucket "comprobantes"
 // ────────────────────────────────────────────────────────────────────────────
-async function uploadReceipt(file) {
+export async function uploadReceipt(file) {
   if (!supabase || !file) return null
   const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase()
   const rand = Math.random().toString(36).slice(2, 10)
@@ -80,24 +80,11 @@ async function uploadReceipt(file) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// createDonation — inserta una donación (sube logo y comprobante si vienen)
+// insertDonation — solo INSERT a la tabla (no sube archivos). Útil para
+// crear múltiples filas con el mismo logoUrl/receiptUrl (spillover).
 // ────────────────────────────────────────────────────────────────────────────
-export async function createDonation(
-  donation,
-  logoFile = null,
-  receiptFile = null
-) {
+export async function insertDonation(donation) {
   if (!supabase) throw new Error('Supabase no está configurado')
-
-  let logoUrl = null
-  if (donation.isCompany && logoFile) {
-    logoUrl = await uploadLogo(logoFile)
-  }
-
-  let receiptUrl = null
-  if (receiptFile) {
-    receiptUrl = await uploadReceipt(receiptFile)
-  }
 
   const id = `d-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const row = {
@@ -107,8 +94,8 @@ export async function createDonation(
     message: donation.message?.trim() || '',
     amount: Number(donation.amount) || 0,
     is_company: !!donation.isCompany,
-    logo_url: logoUrl,
-    receipt_url: receiptUrl,
+    logo_url: donation.logoUrl || null,
+    receipt_url: donation.receiptUrl || null,
     transfer_first_name: donation.transferFirstName?.trim() || null,
     transfer_last_name: donation.transferLastName?.trim() || null,
     transfer_rut: donation.transferRut?.trim() || null,
@@ -123,6 +110,27 @@ export async function createDonation(
     throw error
   }
   return rowToDonor(data)
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// createDonation — wrapper para 1 sola fila: sube archivos + inserta
+// ────────────────────────────────────────────────────────────────────────────
+export async function createDonation(
+  donation,
+  logoFile = null,
+  receiptFile = null
+) {
+  let logoUrl = null
+  if (donation.isCompany && logoFile) {
+    logoUrl = await uploadLogo(logoFile)
+  }
+
+  let receiptUrl = null
+  if (receiptFile) {
+    receiptUrl = await uploadReceipt(receiptFile)
+  }
+
+  return insertDonation({ ...donation, logoUrl, receiptUrl })
 }
 
 // ────────────────────────────────────────────────────────────────────────────

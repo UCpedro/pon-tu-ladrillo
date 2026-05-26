@@ -12,6 +12,7 @@ export default function DonationForm({
   tiers,
   parts,
   selectedTierId,
+  preferredPartId,
   onSelectTier,
   onSubmit,
 }) {
@@ -24,7 +25,10 @@ export default function DonationForm({
   const tierStats = useMemo(() => {
     const map = new Map()
     tiers.forEach((t) => {
-      const tierParts = parts.filter((p) => p.tier === t.id)
+      // Excluir piezas preview (no son donables)
+      const tierParts = parts.filter(
+        (p) => p.tier === t.id && !p.isPreviewOnly
+      )
       const next = tierParts.find((p) => p.fundedPercent < 100)
       const completed = tierParts.filter((p) => p.fundedPercent >= 100).length
       map.set(t.id, {
@@ -40,7 +44,19 @@ export default function DonationForm({
 
   const selectedTier = tiers.find((t) => t.id === selectedTierId) || null
   const selectedStats = selectedTier ? tierStats.get(selectedTier.id) : null
-  const nextPart = selectedStats?.next || null
+  // Si el usuario clickeó una pieza específica (preferredPartId), esa es la
+  // pieza target. Si no, la primera disponible del tier.
+  const preferredPart = useMemo(() => {
+    if (!preferredPartId || !selectedTier) return null
+    return parts.find(
+      (p) =>
+        p.id === preferredPartId &&
+        p.tier === selectedTier.id &&
+        p.fundedPercent < 100 &&
+        !p.isPreviewOnly
+    )
+  }, [preferredPartId, selectedTier, parts])
+  const nextPart = preferredPart || selectedStats?.next || null
 
   const remainingForPart = nextPart
     ? nextPart.price - nextPart.fundedAmount
@@ -50,9 +66,12 @@ export default function DonationForm({
 
   // % en vivo (sobre el costo TOTAL de UNA pieza del tipo)
   const numericAmount = Number(amount) || 0
+  // Porcentaje REAL — puede ser > 100% si el aporte supera el costo de una pieza
   const livePercent = selectedTier
-    ? Math.min(100, Math.round((numericAmount / selectedTier.price) * 100))
+    ? Math.round((numericAmount / selectedTier.price) * 100)
     : 0
+  // Para la barra visual capeada a 100%
+  const barPercent = Math.min(100, livePercent)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -209,19 +228,45 @@ export default function DonationForm({
                     de un/a {selectedTier.title.toLowerCase()}
                   </span>
                 </p>
+                {livePercent > 100 && (
+                  <p className="text-xs text-slate-600 mt-1">
+                    Cubrís{' '}
+                    <strong>
+                      {Math.floor(numericAmount / selectedTier.price)}{' '}
+                      {selectedTier.title.toLowerCase()}
+                      {Math.floor(numericAmount / selectedTier.price) === 1
+                        ? ''
+                        : 'es'}
+                    </strong>{' '}
+                    {numericAmount % selectedTier.price > 0 && (
+                      <>
+                        + {Math.round(
+                          ((numericAmount % selectedTier.price) /
+                            selectedTier.price) *
+                            100
+                        )}
+                        % de la siguiente
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
               <div className="text-right">
-                <p className="text-xs text-slate-500">Costo total</p>
+                <p className="text-xs text-slate-500">Costo de uno</p>
                 <p className="font-display font-bold text-tp-blue-dark text-lg">
                   {formatCLP(selectedTier.price)}
                 </p>
               </div>
             </div>
-            {/* Barra visual */}
+            {/* Barra visual (capeada a 100% para no romper layout) */}
             <div className="mt-3 h-3 w-full rounded-full bg-white overflow-hidden border border-tp-blue/20">
               <div
-                className="h-full bg-tp-red rounded-full transition-all duration-300"
-                style={{ width: `${livePercent}%` }}
+                className={`h-full rounded-full transition-all duration-300 ${
+                  livePercent > 100
+                    ? 'bg-gradient-to-r from-tp-red to-emerald-500'
+                    : 'bg-tp-red'
+                }`}
+                style={{ width: `${barPercent}%` }}
               />
             </div>
           </div>

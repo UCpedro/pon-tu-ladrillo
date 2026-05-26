@@ -179,25 +179,150 @@ function Pieces({
   )
 }
 
-// Geometría de cada pieza: box (default) o triángulo extruido para hastiales.
-function PieceGeometry({ shape, size }) {
+// Geometría de cada pieza: box (default), triángulo extruido para hastiales
+// o cilindro para latas de barniz.
+function PieceGeometry({ shape, size, gableSide }) {
   const geom = useMemo(() => {
-    if (shape !== 'gable') return null
-    const [baseWidth, height, thickness] = size
-    const s = new THREE.Shape()
-    s.moveTo(-baseWidth / 2, 0)
-    s.lineTo(baseWidth / 2, 0)
-    s.lineTo(0, height)
-    s.lineTo(-baseWidth / 2, 0)
-    return new THREE.ExtrudeGeometry(s, {
-      depth: thickness,
-      bevelEnabled: false,
-      curveSegments: 1,
-    })
-  }, [shape, size])
+    if (shape === 'gable') {
+      const [baseWidth, height, thickness] = size
+      const s = new THREE.Shape()
+      s.moveTo(-baseWidth / 2, 0)
+      s.lineTo(baseWidth / 2, 0)
+      s.lineTo(0, height)
+      s.lineTo(-baseWidth / 2, 0)
+      return new THREE.ExtrudeGeometry(s, {
+        depth: thickness,
+        bevelEnabled: false,
+        curveSegments: 1,
+      })
+    }
+    if (shape === 'gable-half') {
+      // Medio triángulo rectángulo: vertical en el centro, hipotenusa en
+      // una de las dos pendientes del frontón.
+      const [baseWidth, height, thickness] = size
+      const s = new THREE.Shape()
+      if (gableSide === 'right') {
+        s.moveTo(0, 0)
+        s.lineTo(baseWidth / 2, 0)
+        s.lineTo(0, height)
+        s.lineTo(0, 0)
+      } else {
+        // 'left' por defecto
+        s.moveTo(-baseWidth / 2, 0)
+        s.lineTo(0, 0)
+        s.lineTo(0, height)
+        s.lineTo(-baseWidth / 2, 0)
+      }
+      return new THREE.ExtrudeGeometry(s, {
+        depth: thickness,
+        bevelEnabled: false,
+        curveSegments: 1,
+      })
+    }
+    if (shape === 'paint-can') {
+      // size = [diametro, alto, diametro]
+      const [diameter, height] = size
+      const radius = diameter / 2
+      // Pequeño taper en la base para un look de lata
+      return new THREE.CylinderGeometry(radius * 0.97, radius, height, 24)
+    }
+    if (shape === 'insulation-roll') {
+      // size = [diametro, largo, diametro]. Cilindro recto (sin taper).
+      const [diameter, length] = size
+      const radius = diameter / 2
+      return new THREE.CylinderGeometry(radius, radius, length, 24)
+    }
+    return null
+  }, [shape, size, gableSide])
 
   if (geom) return <primitive object={geom} attach="geometry" />
   return <boxGeometry args={size} />
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Decoraciones para latas de barniz (estilo Ceresita): rebordes metálicos
+// arriba y abajo + banda marrón con "etiqueta" alrededor de la base.
+// ────────────────────────────────────────────────────────────────────────────
+function PaintCanDecor({ size }) {
+  const [diameter, height] = size
+  const radius = diameter / 2
+  // Tapa metálica un poco POR ENCIMA del cuerpo (evita z-fighting con la tapa
+  // natural del cilindro) y de radio menor → el cuerpo deja ver un "borde" de
+  // color que actúa como reborde metálico estilo Ceresita.
+  const lidRadius = radius * 0.9
+  const lidThickness = height * 0.03
+  const lidYCenter = height / 2 + lidThickness / 2 + 0.002
+  // Banda de etiqueta marrón en la mitad inferior del cuerpo
+  const labelHeight = height * 0.32
+  const labelYCenter = -height * 0.12
+  // Anillo metálico inferior (apoyo)
+  const bottomRingHeight = height * 0.05
+  return (
+    <>
+      {/* Tapa metálica (un poco por encima del cuerpo) */}
+      <mesh position={[0, lidYCenter, 0]}>
+        <cylinderGeometry args={[lidRadius, lidRadius, lidThickness, 24]} />
+        <meshStandardMaterial color="#c4c4c4" metalness={0.8} roughness={0.25} />
+      </mesh>
+      {/* Pequeño anillo metálico bajo la tapa (acentúa el reborde) */}
+      <mesh position={[0, height / 2 - bottomRingHeight / 2 + 0.002, 0]}>
+        <cylinderGeometry
+          args={[radius * 1.008, radius * 1.008, bottomRingHeight * 0.45, 24]}
+        />
+        <meshStandardMaterial color="#a8a8a8" metalness={0.7} roughness={0.3} />
+      </mesh>
+      {/* Banda de etiqueta (marrón) en la mitad inferior */}
+      <mesh position={[0, labelYCenter, 0]}>
+        <cylinderGeometry
+          args={[radius * 1.002, radius * 1.002, labelHeight, 24]}
+        />
+        <meshStandardMaterial color="#7c4f25" roughness={0.7} />
+      </mesh>
+      {/* Línea celeste "terminación brillante" como detalle */}
+      <mesh position={[0, labelYCenter - labelHeight * 0.32, 0]}>
+        <cylinderGeometry
+          args={[radius * 1.004, radius * 1.004, height * 0.05, 24]}
+        />
+        <meshStandardMaterial color="#3b9fd6" roughness={0.5} />
+      </mesh>
+      {/* Anillo metálico inferior (apoyo del fondo) */}
+      <mesh position={[0, -height / 2 + bottomRingHeight / 2, 0]}>
+        <cylinderGeometry
+          args={[radius * 1.008, radius * 1.008, bottomRingHeight, 24]}
+        />
+        <meshStandardMaterial color="#a8a8a8" metalness={0.7} roughness={0.3} />
+      </mesh>
+    </>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Decoraciones para cajas de clavos: banda amarilla horizontal + etiqueta
+// oscura al frente que sugiere "CLAVOS".
+// ────────────────────────────────────────────────────────────────────────────
+function NailBoxDecor({ size }) {
+  const [width, height, depth] = size
+  return (
+    <>
+      {/* Cinta amarilla alrededor de la caja */}
+      <mesh position={[0, height * 0.15, 0]}>
+        <boxGeometry
+          args={[width * 1.004, height * 0.32, depth * 1.004]}
+        />
+        <meshStandardMaterial color="#f4c20c" roughness={0.5} />
+      </mesh>
+      {/* Etiqueta oscura al frente */}
+      <mesh position={[0, height * 0.15, depth / 2 + 0.003]}>
+        <boxGeometry args={[width * 0.72, height * 0.18, 0.005]} />
+        <meshStandardMaterial color="#2a2a2a" roughness={0.6} />
+      </mesh>
+      {/* Pequeño "ribete" amarillo bajo la etiqueta para contraste */}
+      <mesh position={[0, height * -0.05, depth / 2 + 0.002]}>
+        <boxGeometry args={[width * 0.72, height * 0.04, 0.004]} />
+        <meshStandardMaterial color="#f4c20c" roughness={0.4} />
+      </mesh>
+    </>
+  )
 }
 
 // Devuelve { pos, rot, size } del LogoPlate para una pieza dada.
@@ -496,8 +621,8 @@ function Piece({
               ? 0.12
               : 0
       }
-      transparent={isWindow}
-      opacity={isWindow ? 0.95 : 1}
+      transparent={false}
+      opacity={1}
     />
   )
 
@@ -548,11 +673,13 @@ function Piece({
       {/* Ghost: marco transparente cuando aún no está completa */}
       {showGhost && (
         <mesh {...pointerHandlers}>
-          <PieceGeometry shape={shape} size={size} />
+          <PieceGeometry shape={shape} size={size} gableSide={part.gableSide} />
           {ghostMaterial}
           <Edges
             scale={isFlash ? 1.04 : 1.001}
-            threshold={15}
+            threshold={
+              shape === 'paint-can' || shape === 'insulation-roll' ? 30 : 15
+            }
             color={ghostEdgeColor}
           />
         </mesh>
@@ -560,19 +687,21 @@ function Piece({
 
       {/* Filled: porción escalada según fundedPercent */}
       {showFilled && fillTransform && (
-        <mesh
-          position={fillTransform.offset}
-          scale={fillTransform.scale}
-          {...pointerHandlers}
-        >
-          <PieceGeometry shape={shape} size={size} />
-          {filledMaterial}
-          <Edges
-            scale={isFlash ? 1.04 : 1.001}
-            threshold={15}
-            color={filledEdgeColor}
-          />
-        </mesh>
+        <group position={fillTransform.offset} scale={fillTransform.scale}>
+          <mesh {...pointerHandlers}>
+            <PieceGeometry shape={shape} size={size} gableSide={part.gableSide} />
+            {filledMaterial}
+            <Edges
+              scale={isFlash ? 1.04 : 1.001}
+              threshold={
+              shape === 'paint-can' || shape === 'insulation-roll' ? 30 : 15
+            }
+              color={filledEdgeColor}
+            />
+          </mesh>
+          {shape === 'paint-can' && <PaintCanDecor size={size} />}
+          {shape === 'nail-box' && <NailBoxDecor size={size} />}
+        </group>
       )}
 
       {/* Logo de empresa apadrinadora */}

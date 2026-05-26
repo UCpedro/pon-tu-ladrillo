@@ -2,7 +2,9 @@ import { formatCLP } from '../utils/format.js'
 
 export default function DonationTiers({ tiers, parts, onPickTier }) {
   const stats = tiers.map((tier) => {
-    const tierParts = parts.filter((p) => p.tier === tier.id)
+    const tierParts = parts.filter(
+      (p) => p.tier === tier.id && !p.isPreviewOnly
+    )
     const completed = tierParts.filter((p) => p.fundedPercent >= 100).length
     const totalRaised = tierParts.reduce(
       (s, p) => s + Math.min(p.fundedAmount, p.price),

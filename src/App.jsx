@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   donationParts,
+  sampleDonors,
   totalGoal,
   tiers,
 } from './data/donationParts.js'
 import {
   fetchDonations,
-  createDonation,
+  insertDonation,
+  uploadLogo,
+  uploadReceipt,
   subscribeNewDonations,
 } from './lib/donations.js'
 import Hero from './components/Hero.jsx'
@@ -15,10 +18,14 @@ import DonationTiers from './components/DonationTiers.jsx'
 import DonorList from './components/DonorList.jsx'
 import DonationForm from './components/DonationForm.jsx'
 import TransferModal from './components/TransferModal.jsx'
+import ContactSection from './components/ContactSection.jsx'
 
 export default function App() {
   const [donors, setDonors] = useState([])
   const [selectedTierId, setSelectedTierId] = useState(null)
+  // Si el usuario clickea una pieza específica en el modelo 3D, queremos que
+  // su donación vaya PRIMERO a esa pieza (en vez de la "primera disponible").
+  const [preferredPartId, setPreferredPartId] = useState(null)
   const [flashPartId, setFlashPartId] = useState(null)
   const [pendingDonation, setPendingDonation] = useState(null)
   const formRef = useRef(null)
@@ -27,7 +34,12 @@ export default function App() {
   useEffect(() => {
     let cancelled = false
     fetchDonations().then((data) => {
-      if (!cancelled) setDonors(data)
+      if (!cancelled) {
+        // Mezclar preview locales (sampleDonors) con las reales de Supabase
+        const existingIds = new Set(data.map((d) => d.id))
+        const previews = sampleDonors.filter((s) => !existingIds.has(s.id))
+        setDonors([...previews, ...data])
+      }
     })
     const unsubscribe = subscribeNewDonations((newDonor) => {
       setDonors((prev) => {
@@ -49,6 +61,19 @@ export default function App() {
       donationsByPart.get(d.partId).push(d)
     })
     return donationParts.map((part) => {
+      // Piezas marcadas isPreviewOnly: aparecen siempre llenas (visualmente)
+      // pero no reciben donaciones ni cuentan para las estadísticas.
+      if (part.isPreviewOnly) {
+        return {
+          ...part,
+          donations: [],
+          donor: null,
+          fundedAmount: part.price,
+          cappedAmount: 0, // no cuenta como plata recaudada
+          fundedPercent: 100,
+          donated: true,
+        }
+      }
       const partDonations = donationsByPart.get(part.id) || []
       const fundedAmount = partDonations.reduce(
         (s, d) => s + (d.amount || 0),
@@ -60,7 +85,7 @@ export default function App() {
       return {
         ...part,
         donations: partDonations,
-        donor: partDonations[0] || null, // último/primero (compat)
+        donor: partDonations[0] || null,
         fundedAmount,
         cappedAmount,
         fundedPercent,
@@ -70,11 +95,12 @@ export default function App() {
   }, [donors])
 
   // Estadísticas globales — "raised" suma TODOS los aportes reales recibidos
-  // (sin capear por pieza). El porcentaje del salón sí se capea a 100%.
+  // (sin capear por pieza). Las piezas preview no cuentan para el conteo.
   const stats = useMemo(() => {
     const raised = donors.reduce((sum, d) => sum + (d.amount || 0), 0)
-    const donatedParts = partsWithStatus.filter((p) => p.donated).length
-    const totalParts = partsWithStatus.length
+    const realParts = partsWithStatus.filter((p) => !p.isPreviewOnly)
+    const donatedParts = realParts.filter((p) => p.donated).length
+    const totalParts = realParts.length
     return {
       raised,
       goal: totalGoal,
@@ -92,13 +118,29 @@ export default function App() {
     }
   }
 
-  // Al donar, se elige la primera pieza disponible del tier.
-  // Si la donación es de empresa, se omiten piezas marcadas con `excludeCompanyLogo`.
-  const findNextPartForTier = (tierId, { isCompany = false } = {}) => {
+  // Devuelve la pieza inicial: si el usuario clickeó una específica y todavía
+  // hay capacidad, esa; si no, la primera disponible del tier.
+  // Las piezas marcadas isPreviewOnly se ignoran (no reciben donaciones).
+  const findStartingPart = (
+    tierId,
+    { isCompany = false, preferredId = null } = {}
+  ) => {
+    if (preferredId) {
+      const preferred = partsWithStatus.find(
+        (p) =>
+          p.id === preferredId &&
+          p.tier === tierId &&
+          p.fundedPercent < 100 &&
+          !p.isPreviewOnly &&
+          !(isCompany && p.excludeCompanyLogo)
+      )
+      if (preferred) return preferred
+    }
     return partsWithStatus.find(
       (p) =>
         p.tier === tierId &&
         p.fundedPercent < 100 &&
+        !p.isPreviewOnly &&
         !(isCompany && p.excludeCompanyLogo)
     )
   }
@@ -118,7 +160,10 @@ export default function App() {
         reject(new Error('Tier inválido'))
         return
       }
-      const target = findNextPartForTier(tierId, { isCompany: !!isCompany })
+      const target = findStartingPart(tierId, {
+        isCompany: !!isCompany,
+        preferredId: preferredPartId,
+      })
       if (!target) {
         reject(new Error('No hay piezas disponibles'))
         return
@@ -141,6 +186,46 @@ export default function App() {
     })
   }
 
+  // Reparte un monto entre piezas del mismo tier hasta agotarlo.
+  // Cada chunk respeta el remaining de la pieza para no sobrellenar.
+  const planSpillover = (startPart, amount) => {
+    const chunks = []
+    let amountLeft = amount
+
+    // Lista de piezas candidatas del mismo tier, en orden: empezar por la
+    // pieza target, luego seguir con el resto que estén disponibles.
+    // Las isPreviewOnly se excluyen del flujo de donaciones.
+    const samesTier = partsWithStatus.filter(
+      (p) => p.tier === startPart.tier && !p.isPreviewOnly
+    )
+    const orderedParts = [
+      startPart,
+      ...samesTier.filter((p) => p.id !== startPart.id),
+    ]
+
+    for (const part of orderedParts) {
+      if (amountLeft <= 0) break
+      const fundedSoFar = part.fundedAmount || 0
+      const remaining = Math.max(0, part.price - fundedSoFar)
+      if (remaining <= 0) continue
+      const take = Math.min(amountLeft, remaining)
+      chunks.push({ partId: part.id, amount: take })
+      amountLeft -= take
+    }
+
+    // Si después de llenar todas las piezas todavía sobra,
+    // lo metemos en la última pieza (sobre-aporte registrado).
+    if (amountLeft > 0) {
+      if (chunks.length > 0) {
+        chunks[chunks.length - 1].amount += amountLeft
+      } else {
+        chunks.push({ partId: startPart.id, amount: amountLeft })
+      }
+    }
+
+    return chunks
+  }
+
   const handleConfirmTransfer = async ({
     receiptFile,
     firstName,
@@ -150,32 +235,53 @@ export default function App() {
     const pd = pendingDonation
     if (!pd) return
     try {
-      const saved = await createDonation(
-        {
-          partId: pd.targetPart.id,
-          name: pd.name,
-          message: pd.message,
-          amount: pd.amount,
-          isCompany: pd.isCompany,
-          transferFirstName: firstName,
-          transferLastName: lastName,
-          transferRut: rut,
-        },
-        pd.logoFile,
-        receiptFile
-      )
+      // 1) Subir archivos UNA sola vez (logo + comprobante)
+      const logoUrl = pd.isCompany && pd.logoFile ? await uploadLogo(pd.logoFile) : null
+      const receiptUrl = receiptFile ? await uploadReceipt(receiptFile) : null
 
-      setDonors((prev) =>
-        prev.some((d) => d.id === saved.id) ? prev : [saved, ...prev]
-      )
+      // 2) Calcular reparto entre piezas
+      const chunks = planSpillover(pd.targetPart, pd.amount)
+
+      // 3) Insertar una fila por cada chunk (mismo donante, distintas piezas)
+      const baseDonor = {
+        name: pd.name,
+        message: pd.message,
+        isCompany: pd.isCompany,
+        transferFirstName: firstName,
+        transferLastName: lastName,
+        transferRut: rut,
+        logoUrl,
+        receiptUrl,
+      }
+      const savedAll = []
+      for (const c of chunks) {
+        const saved = await insertDonation({
+          ...baseDonor,
+          partId: c.partId,
+          amount: c.amount,
+        })
+        savedAll.push(saved)
+      }
+
+      // 4) Actualizar estado local (Realtime también los traerá, evitamos dup)
+      setDonors((prev) => {
+        const news = savedAll.filter(
+          (s) => !prev.some((p) => p.id === s.id)
+        )
+        return news.length ? [...news, ...prev] : prev
+      })
+
+      // 5) Flash + scroll a la primera pieza tocada
       setFlashPartId(pd.targetPart.id)
       setTimeout(() => {
         const el = document.getElementById('modelo')
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 50)
       setTimeout(() => setFlashPartId(null), 5000)
-      pd.resolve(saved)
+
+      pd.resolve(savedAll[0])
       setPendingDonation(null)
+      setPreferredPartId(null)
     } catch (err) {
       console.error('[App] No se pudo registrar la donación:', err)
       if (typeof window !== 'undefined') {
@@ -191,6 +297,7 @@ export default function App() {
     if (pendingDonation) {
       pendingDonation.reject(new Error('Cancelado'))
       setPendingDonation(null)
+      setPreferredPartId(null)
     }
   }
 
@@ -209,9 +316,17 @@ export default function App() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const scrollToContact = () => {
+    const el = document.getElementById('contacto')
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <div className="min-h-screen pb-20">
-      <Header onDonateClick={scrollToForm} />
+      <Header
+        onDonateClick={scrollToForm}
+        onContactClick={scrollToContact}
+      />
 
       <main className="space-y-24">
         <Hero
@@ -226,9 +341,10 @@ export default function App() {
           onDonateClick={scrollToForm}
           onCompanyClick={scrollToCompany}
           onViewParts={scrollToTiers}
-          onPartClick={(part) =>
+          onPartClick={(part) => {
+            setPreferredPartId(part.id)
             handleSelectTier(part.tier, { scroll: true })
-          }
+          }}
         />
 
         <section className="tp-section">
@@ -239,15 +355,24 @@ export default function App() {
           <SectionHeader
             eyebrow="Categorías de aporte"
             title="Elige cómo quieres aportar"
-            subtitle="Cada categoría tiene un costo total. Podés aportar la pieza entera o un porcentaje — cada peso suma."
+            subtitle={
+              <>
+                Cada categoría tiene un costo total.{' '}
+                <span className="text-tp-red font-semibold">
+                  Puedes aportar la pieza entera o un porcentaje
+                </span>{' '}
+                — cada peso suma.
+              </>
+            }
           />
           <div className="mt-8">
             <DonationTiers
               tiers={tiers}
               parts={partsWithStatus}
-              onPickTier={(tierId) =>
+              onPickTier={(tierId) => {
+                setPreferredPartId(null) // se eligió tier, no pieza puntual
                 handleSelectTier(tierId, { scroll: true })
-              }
+              }}
             />
           </div>
         </section>
@@ -265,7 +390,11 @@ export default function App() {
                 tiers={tiers}
                 parts={partsWithStatus}
                 selectedTierId={selectedTierId}
-                onSelectTier={setSelectedTierId}
+                preferredPartId={preferredPartId}
+                onSelectTier={(tierId) => {
+                  setPreferredPartId(null) // cambió tier → ya no apunta a pieza concreta
+                  setSelectedTierId(tierId)
+                }}
                 onSubmit={handleRegisterDonation}
               />
             </div>
@@ -312,6 +441,10 @@ export default function App() {
           </div>
         </section>
 
+        <section id="contacto" className="tp-section">
+          <ContactSection />
+        </section>
+
       </main>
 
       <Footer />
@@ -328,7 +461,7 @@ export default function App() {
   )
 }
 
-function Header({ onDonateClick }) {
+function Header({ onDonateClick, onContactClick }) {
   return (
     <header className="tp-section flex items-center justify-between pt-4 pb-4 sm:pt-6 sm:pb-6">
       <a href="#" className="flex items-center gap-7">
@@ -364,6 +497,12 @@ function Header({ onDonateClick }) {
           className="tp-btn-primary text-lg py-3.5 px-7"
         >
           Quiero donar
+        </button>
+        <button
+          onClick={onContactClick}
+          className="tp-btn-secondary text-lg py-3.5 px-7"
+        >
+          ✉ Contacto
         </button>
       </div>
     </header>

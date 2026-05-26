@@ -21,6 +21,9 @@ const WOOD = '#c9a06a'
 const ZINC = '#a9b3bd'
 const GLASS = '#a9c9ec'
 const DOOR_COLOR = '#7b2d1f'
+const VARNISH = '#f3eee2' // cuerpo blanco crema (etiqueta tipo Ceresita)
+const CARDBOARD = '#b07a45' // cartón kraft del fondo de la caja
+const INSULATION = '#d6c485' // rollo de aislante (fibra de vidrio tono natural)
 
 // Categorías → para el componente DonationTiers
 // El "price" mostrado es el COSTO TOTAL de UNA pieza entera. Si donás menos,
@@ -38,7 +41,7 @@ export const tiers = [
   {
     id: 'techo',
     title: 'Pieza techo',
-    price: 250000,
+    price: 100000,
     color: 'bg-tp-zinc-dark',
     badge: '🏠',
     description:
@@ -47,11 +50,11 @@ export const tiers = [
   {
     id: 'panel',
     title: 'Panel',
-    price: 250000,
+    price: 150000,
     color: 'bg-tp-earth-dark',
     badge: '🪵',
     description:
-      'Uno de los paneles estructurales P1–P8 de los muros del salón.',
+      'Uno de los paneles estructurales P1–P12 de los muros del salón.',
   },
   {
     id: 'puerta',
@@ -61,6 +64,33 @@ export const tiers = [
     badge: '🚪',
     description:
       'La puerta principal de doble hoja. La entrada del salón.',
+  },
+  {
+    id: 'barniz',
+    title: 'Lata de barniz',
+    price: 10000,
+    color: 'bg-amber-700',
+    badge: '🪣',
+    description:
+      'Una lata de barniz para terminar la madera del salón.',
+  },
+  {
+    id: 'clavos',
+    title: 'Caja de clavos',
+    price: 10000,
+    color: 'bg-stone-700',
+    badge: '📦',
+    description:
+      'Una caja de clavos para fijar los tablones del salón.',
+  },
+  {
+    id: 'aislante',
+    title: 'Rollo de aislante',
+    price: 20000,
+    color: 'bg-yellow-700',
+    badge: '🧶',
+    description:
+      'Un rollo de aislante térmico para los muros del salón.',
   },
 ]
 
@@ -75,163 +105,8 @@ export const tiers = [
 const ROOF_TILT = Math.atan(2 / 3) // ≈ 0.588 rad
 
 export const donationParts = [
-  // ── PANELES P1–P8 ────────────────────────────────────────────────────────
-  // Muro frontal (z = +3)
-  {
-    id: 'P1',
-    name: 'Panel P1 · Frontal izquierdo',
-    description: 'Muro de madera machihembrada al costado de la entrada.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'panel',
-    position: [-3.33, 1.6, 3],
-    rotation: [0, 0, 0],
-    size: [3.33, 3, 0.15],
-    color: WOOD,
-  },
-  {
-    id: 'P2',
-    name: 'Panel P2 · Frontal centro (entrada)',
-    description: 'Panel central donde se monta la puerta principal.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'panel',
-    position: [0, 1.6, 3],
-    rotation: [0, 0, 0],
-    size: [3.33, 3, 0.15],
-    color: WOOD,
-    // La puerta ocupa el centro de este panel — no admite logo de empresa.
-    excludeCompanyLogo: true,
-  },
-  {
-    id: 'P3',
-    name: 'Panel P3 · Frontal derecho',
-    description: 'Panel del frente con ventana hacia la calle.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'panel',
-    position: [3.33, 1.6, 3],
-    rotation: [0, 0, 0],
-    size: [3.33, 3, 0.15],
-    color: WOOD,
-    hasWindow: true,
-  },
-  // Muro trasero (z = -3)
-  {
-    id: 'P4',
-    name: 'Panel P4 · Trasero izquierdo',
-    description: 'Muro trasero con ventana hacia el patio.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'panel',
-    position: [-3.33, 1.6, -3],
-    rotation: [0, 0, 0],
-    size: [3.33, 3, 0.15],
-    color: WOOD,
-    hasWindow: true,
-  },
-  {
-    id: 'P5',
-    name: 'Panel P5 · Trasero centro',
-    description: 'Muro trasero central, ventana sobre cocina.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'panel',
-    position: [0, 1.6, -3],
-    rotation: [0, 0, 0],
-    size: [3.33, 3, 0.15],
-    color: WOOD,
-    hasWindow: true,
-  },
-  {
-    id: 'P6',
-    name: 'Panel P6 · Trasero derecho',
-    description: 'Muro trasero al fondo del baño.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'panel',
-    position: [3.33, 1.6, -3],
-    rotation: [0, 0, 0],
-    size: [3.33, 3, 0.15],
-    color: WOOD,
-    hasWindow: true,
-  },
-  // Muros laterales
-  // ── Muros laterales · cada lado dividido en 3 paneles de 2m ──────────────
-  {
-    id: 'P7',
-    name: 'Panel P7 · Lateral oeste (trasero)',
-    description: 'Tercio trasero del muro lateral oeste.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'side-panel',
-    position: [-5, 1.6, -2],
-    rotation: [0, 0, 0],
-    size: [0.15, 3, 2],
-    color: WOOD,
-  },
-  {
-    id: 'P8',
-    name: 'Panel P8 · Lateral oeste (centro)',
-    description: 'Sección central del muro lateral oeste, con ventana hacia el sol poniente.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'side-panel',
-    position: [-5, 1.6, 0],
-    rotation: [0, 0, 0],
-    size: [0.15, 3, 2],
-    color: WOOD,
-    hasWindow: true,
-  },
-  {
-    id: 'P9',
-    name: 'Panel P9 · Lateral oeste (frontal)',
-    description: 'Tercio frontal del muro lateral oeste.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'side-panel',
-    position: [-5, 1.6, 2],
-    rotation: [0, 0, 0],
-    size: [0.15, 3, 2],
-    color: WOOD,
-  },
-  {
-    id: 'P10',
-    name: 'Panel P10 · Lateral este (trasero)',
-    description: 'Tercio trasero del muro lateral este.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'side-panel',
-    position: [5, 1.6, -2],
-    rotation: [0, 0, 0],
-    size: [0.15, 3, 2],
-    color: WOOD,
-  },
-  {
-    id: 'P11',
-    name: 'Panel P11 · Lateral este (centro)',
-    description: 'Sección central del muro lateral este.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'side-panel',
-    position: [5, 1.6, 0],
-    rotation: [0, 0, 0],
-    size: [0.15, 3, 2],
-    color: WOOD,
-  },
-  {
-    id: 'P12',
-    name: 'Panel P12 · Lateral este (frontal)',
-    description: 'Tercio frontal del muro lateral este.',
-    tier: 'panel',
-    price: 250000,
-    shape: 'side-panel',
-    position: [5, 1.6, 2],
-    rotation: [0, 0, 0],
-    size: [0.15, 3, 2],
-    color: WOOD,
-  },
-
+  // ── PANELES · cada panel base se divide en 5 tablones de $50.000 ─────────
+  ...buildPanels(),
   // ── PUERTA ───────────────────────────────────────────────────────────────
   {
     id: 'D1',
@@ -286,13 +161,13 @@ export const donationParts = [
   {
     id: 'V4',
     name: 'Ventana V4 · Trasera derecha',
-    description: 'Ventana alta trasera derecha.',
+    description: 'Ventana trasera derecha.',
     tier: 'ventana',
     price: 20000,
     shape: 'window',
-    position: [3.33, 2.2, -3.09],
+    position: [3.33, 1.9, -3.09],
     rotation: [0, 0, 0],
-    size: [1.2, 0.6, 0.06],
+    size: [1.4, 1, 0.06],
     color: GLASS,
   },
   {
@@ -307,77 +182,388 @@ export const donationParts = [
     size: [0.06, 1, 1.4],
     color: GLASS,
   },
+  {
+    id: 'V6',
+    name: 'Ventana V6 · Frontal izquierda',
+    description: 'Ventana del salón hacia la calle (lado izquierdo).',
+    tier: 'ventana',
+    price: 20000,
+    shape: 'window',
+    position: [-3.33, 1.9, 3.09],
+    rotation: [0, 0, 0],
+    size: [1.4, 1, 0.06],
+    color: GLASS,
+  },
+  {
+    id: 'V7',
+    name: 'Ventana V7 · Lateral este',
+    description: 'Ventana lateral del salón hacia el este.',
+    tier: 'ventana',
+    price: 20000,
+    shape: 'side-window',
+    position: [5.09, 1.9, 0],
+    rotation: [0, 0, 0],
+    size: [0.06, 1, 1.4],
+    color: GLASS,
+  },
 
   // ── TECHO · 12 secciones (cada agua dividida en 6 → 3 por cada mitad) ────
   // Aguas sur (+Z, rotación positiva) y norte (-Z, rotación negativa).
   // Cumbrera a lo largo del eje X. Cada sección es 10/6 ≈ 1.667 m en X.
   ...buildRoof(),
 
-  // ── HASTIALES (paneles triangulares entre muros laterales y techo) ───────
+  // ── HASTIALES · 2 triángulos por frontón (izq + der), $150.000 c/u ────────
   {
-    id: 'G1',
-    name: 'Hastial G1 · Frontón oeste',
-    description: 'Panel triangular entre el muro lateral oeste y el techo.',
+    id: 'G1-1',
+    name: 'Hastial G1 · Frontón oeste (mitad izquierda)',
+    description: 'Mitad izquierda del panel triangular del frontón oeste.',
     tier: 'panel',
     price: 150000,
-    shape: 'gable',
+    shape: 'gable-half',
+    gableSide: 'left',
     position: [-5, 3.1, 0],
     rotation: [0, Math.PI / 2, 0],
-    size: [6, 2, 0.15], // [base, altura, espesor]
+    size: [6, 2, 0.15],
     color: WOOD,
     excludeCompanyLogo: true,
   },
   {
-    id: 'G2',
-    name: 'Hastial G2 · Frontón este',
-    description: 'Panel triangular entre el muro lateral este y el techo.',
+    id: 'G1-2',
+    name: 'Hastial G1 · Frontón oeste (mitad derecha)',
+    description: 'Mitad derecha del panel triangular del frontón oeste.',
     tier: 'panel',
     price: 150000,
-    shape: 'gable',
+    shape: 'gable-half',
+    gableSide: 'right',
+    position: [-5, 3.1, 0],
+    rotation: [0, Math.PI / 2, 0],
+    size: [6, 2, 0.15],
+    color: WOOD,
+    excludeCompanyLogo: true,
+  },
+  {
+    id: 'G2-1',
+    name: 'Hastial G2 · Frontón este (mitad izquierda)',
+    description: 'Mitad izquierda del panel triangular del frontón este.',
+    tier: 'panel',
+    price: 150000,
+    shape: 'gable-half',
+    gableSide: 'left',
     position: [5, 3.1, 0],
     rotation: [0, -Math.PI / 2, 0],
     size: [6, 2, 0.15],
     color: WOOD,
     excludeCompanyLogo: true,
   },
+  {
+    id: 'G2-2',
+    name: 'Hastial G2 · Frontón este (mitad derecha)',
+    description: 'Mitad derecha del panel triangular del frontón este.',
+    tier: 'panel',
+    price: 150000,
+    shape: 'gable-half',
+    gableSide: 'right',
+    position: [5, 3.1, 0],
+    rotation: [0, -Math.PI / 2, 0],
+    size: [6, 2, 0.15],
+    color: WOOD,
+    excludeCompanyLogo: true,
+  },
+
+  // ── LATAS DE BARNIZ (frente a P1, sobre el pasto) ────────────────────────
+  ...buildVarnishCans(),
+
+  // ── CAJAS DE CLAVOS (frente a P3, sobre el pasto) ────────────────────────
+  ...buildNailBoxes(),
+
+  // ── ROLLOS DE AISLANTE (frente a P7-P9, lateral oeste) ───────────────────
+  ...buildInsulationRolls(),
 ]
 
 // (Sin ladrillos: el campaign sigue llamándose "Pon tu ladrillo" como metáfora,
 // pero ya no hay piezas físicas tipo ladrillo en el modelo 3D.)
 
+function buildVarnishCans() {
+  // 5 latas de barniz de $10.000 cada una, frente a P1 (lado frontal izquierdo).
+  // B1 = preview (siempre llena, no cuenta) + 4 donables → mismo "available"
+  // que antes (4 disponibles).
+  const positions = [
+    [-4.7, 0.15, 3.65],
+    [-4.05, 0.15, 3.85],
+    [-3.4, 0.15, 3.6],
+    [-2.75, 0.15, 3.85],
+    [-2.1, 0.15, 3.65],
+  ]
+  return positions.map((pos, i) => ({
+    id: `B${i + 1}`,
+    name: `Lata de barniz #${i + 1}`,
+    description: 'Lata de barniz para terminar la madera del salón.',
+    tier: 'barniz',
+    price: 10000,
+    shape: 'paint-can',
+    position: pos,
+    rotation: [0, (i * Math.PI) / 7, 0],
+    size: [0.48, 0.6, 0.48], // [diametro, alto, diametro]
+    color: VARNISH,
+    // La primera lata es solo vista previa: aparece llena pero no cuenta
+    // como donación real ni suma a la meta.
+    ...(i === 0 ? { isPreviewOnly: true } : {}),
+  }))
+}
+
+function buildInsulationRolls() {
+  // 6 rollos de aislante de $20.000 cada uno, frente al muro lateral oeste
+  // (paneles P7-P9). Repartidos al azar (no apilados, no en pares).
+  // Acostados sobre el pasto, con orientaciones distintas para look natural.
+  // Tamaño: diámetro 0.4 m, largo 0.8 m. Centro y = 0.05 (apoyado en pasto).
+  // 7 rollos: R1 preview + 6 donables (mismo "available" que antes).
+  const layout = [
+    { pos: [-5.55, 0.05, -2.7], rotZ: 0 },
+    { pos: [-5.95, 0.05, -1.85], rotZ: Math.PI / 8 },
+    { pos: [-5.6, 0.05, -1.0], rotZ: -Math.PI / 10 },
+    { pos: [-5.9, 0.05, -0.15], rotZ: Math.PI / 6 },
+    { pos: [-5.55, 0.05, 0.7], rotZ: -Math.PI / 7 },
+    { pos: [-5.95, 0.05, 1.55], rotZ: Math.PI / 5 },
+    { pos: [-5.6, 0.05, 2.5], rotZ: -Math.PI / 9 },
+  ]
+  return layout.map((entry, i) => ({
+    id: `R${i + 1}`,
+    name: `Rollo de aislante #${i + 1}`,
+    description: 'Rollo de aislante térmico para los muros del salón.',
+    tier: 'aislante',
+    price: 20000,
+    shape: 'insulation-roll',
+    position: entry.pos,
+    // [π/2, 0, rotZ]: acostado a lo largo de Z + rotado en el plano horizontal
+    rotation: [Math.PI / 2, 0, entry.rotZ],
+    size: [0.4, 0.8, 0.4],
+    color: INSULATION,
+    ...(i === 0 ? { isPreviewOnly: true } : {}),
+  }))
+}
+
+function buildNailBoxes() {
+  // 5 cajas de clavos de $10.000 cada una, frente a P3 (lado frontal derecho).
+  // N1 = preview + 4 donables.
+  const positions = [
+    [2.15, 0.05, 3.65],
+    [2.85, 0.05, 3.85],
+    [3.55, 0.05, 3.6],
+    [4.25, 0.05, 3.85],
+    [4.85, 0.05, 3.65],
+  ]
+  return positions.map((pos, i) => ({
+    id: `N${i + 1}`,
+    name: `Caja de clavos #${i + 1}`,
+    description: 'Caja de clavos para fijar los tablones del salón.',
+    tier: 'clavos',
+    price: 10000,
+    shape: 'nail-box',
+    position: pos,
+    rotation: [0, (i * Math.PI) / 9, 0],
+    size: [0.64, 0.4, 0.48],
+    color: CARDBOARD,
+    ...(i === 0 ? { isPreviewOnly: true } : {}),
+  }))
+}
+
+function buildPanels() {
+  // 12 paneles enteros de $250.000 cada uno (sin subdividir).
+  return [
+    // Muro frontal (z = +3)
+    {
+      id: 'P1',
+      name: 'Panel P1 · Frontal izquierdo',
+      description: 'Muro de madera al costado de la entrada, con ventana.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'panel',
+      position: [-3.33, 1.6, 3],
+      rotation: [0, 0, 0],
+      size: [3.33, 3, 0.15],
+      color: WOOD,
+      hasWindow: true,
+    },
+    {
+      id: 'P2',
+      name: 'Panel P2 · Frontal centro (entrada)',
+      description: 'Panel central donde se monta la puerta principal.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'panel',
+      position: [0, 1.6, 3],
+      rotation: [0, 0, 0],
+      size: [3.33, 3, 0.15],
+      color: WOOD,
+      excludeCompanyLogo: true,
+    },
+    {
+      id: 'P3',
+      name: 'Panel P3 · Frontal derecho',
+      description: 'Panel del frente con ventana hacia la calle.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'panel',
+      position: [3.33, 1.6, 3],
+      rotation: [0, 0, 0],
+      size: [3.33, 3, 0.15],
+      color: WOOD,
+      hasWindow: true,
+    },
+    // Muro trasero (z = -3)
+    {
+      id: 'P4',
+      name: 'Panel P4 · Trasero izquierdo',
+      description: 'Muro trasero con ventana hacia el patio.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'panel',
+      position: [-3.33, 1.6, -3],
+      rotation: [0, 0, 0],
+      size: [3.33, 3, 0.15],
+      color: WOOD,
+      hasWindow: true,
+    },
+    {
+      id: 'P5',
+      name: 'Panel P5 · Trasero centro',
+      description: 'Muro trasero central.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'panel',
+      position: [0, 1.6, -3],
+      rotation: [0, 0, 0],
+      size: [3.33, 3, 0.15],
+      color: WOOD,
+      hasWindow: true,
+    },
+    {
+      id: 'P6',
+      name: 'Panel P6 · Trasero derecho',
+      description: 'Muro trasero al fondo del salón.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'panel',
+      position: [3.33, 1.6, -3],
+      rotation: [0, 0, 0],
+      size: [3.33, 3, 0.15],
+      color: WOOD,
+      hasWindow: true,
+    },
+    // Muros laterales (cada lado dividido en 3 paneles de 2m)
+    {
+      id: 'P7',
+      name: 'Panel P7 · Lateral oeste (trasero)',
+      description: 'Tercio trasero del muro lateral oeste.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'side-panel',
+      position: [-5, 1.6, -2],
+      rotation: [0, 0, 0],
+      size: [0.15, 3, 2],
+      color: WOOD,
+    },
+    {
+      id: 'P8',
+      name: 'Panel P8 · Lateral oeste (centro)',
+      description: 'Sección central del muro lateral oeste, con ventana.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'side-panel',
+      position: [-5, 1.6, 0],
+      rotation: [0, 0, 0],
+      size: [0.15, 3, 2],
+      color: WOOD,
+      hasWindow: true,
+    },
+    {
+      id: 'P9',
+      name: 'Panel P9 · Lateral oeste (frontal)',
+      description: 'Tercio frontal del muro lateral oeste.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'side-panel',
+      position: [-5, 1.6, 2],
+      rotation: [0, 0, 0],
+      size: [0.15, 3, 2],
+      color: WOOD,
+    },
+    {
+      id: 'P10',
+      name: 'Panel P10 · Lateral este (trasero)',
+      description: 'Tercio trasero del muro lateral este.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'side-panel',
+      position: [5, 1.6, -2],
+      rotation: [0, 0, 0],
+      size: [0.15, 3, 2],
+      color: WOOD,
+    },
+    {
+      id: 'P11',
+      name: 'Panel P11 · Lateral este (centro)',
+      description: 'Sección central del muro lateral este, con ventana.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'side-panel',
+      position: [5, 1.6, 0],
+      rotation: [0, 0, 0],
+      size: [0.15, 3, 2],
+      color: WOOD,
+      hasWindow: true,
+    },
+    {
+      id: 'P12',
+      name: 'Panel P12 · Lateral este (frontal)',
+      description: 'Tercio frontal del muro lateral este.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'side-panel',
+      position: [5, 1.6, 2],
+      rotation: [0, 0, 0],
+      size: [0.15, 3, 2],
+      color: WOOD,
+    },
+  ]
+}
+
 function buildRoof() {
+  // 12 secciones de techo enteras de $250.000 cada una.
   const pieces = []
-  const segmentWidth = 10 / 6 // 1.667 m por segmento en X
-  const xCenters = [0, 1, 2, 3, 4, 5].map(
-    (k) => -5 + segmentWidth / 2 + k * segmentWidth
+  const SECTION_WIDTH = 10 / 6 // 1.667 m por sector en X
+  const SLOPE_LENGTH = 3.606
+  const sectionCenters = [0, 1, 2, 3, 4, 5].map(
+    (k) => -5 + SECTION_WIDTH / 2 + k * SECTION_WIDTH
   )
+
   // Agua sur (z = +1.5, rotación +ROOF_TILT)
-  xCenters.forEach((x, i) => {
+  sectionCenters.forEach((x, i) => {
     pieces.push({
       id: `T${i + 1}`,
       name: `Techo T${i + 1} · Agua sur, sector ${i + 1}`,
       description: 'Plancha de zinc del agua sur del techo.',
       tier: 'techo',
-      price: 250000,
+      price: 100000,
       shape: 'roof',
       position: [x, 4.1, 1.5],
       rotation: [ROOF_TILT, 0, 0],
-      size: [segmentWidth, 0.1, 3.606],
+      size: [SECTION_WIDTH, 0.1, SLOPE_LENGTH],
       color: ZINC,
     })
   })
   // Agua norte (z = -1.5, rotación -ROOF_TILT)
-  xCenters.forEach((x, i) => {
+  sectionCenters.forEach((x, i) => {
     pieces.push({
       id: `T${i + 7}`,
       name: `Techo T${i + 7} · Agua norte, sector ${i + 1}`,
       description: 'Plancha de zinc del agua norte del techo.',
       tier: 'techo',
-      price: 250000,
+      price: 100000,
       shape: 'roof',
       position: [x, 4.1, -1.5],
       rotation: [-ROOF_TILT, 0, 0],
-      size: [segmentWidth, 0.1, 3.606],
+      size: [SECTION_WIDTH, 0.1, SLOPE_LENGTH],
       color: ZINC,
     })
   })
@@ -401,4 +587,6 @@ function buildRoof() {
 export const sampleDonors = []
 
 // Meta total (suma del precio sugerido de todas las piezas)
-export const totalGoal = donationParts.reduce((sum, p) => sum + p.price, 0)
+export const totalGoal = donationParts
+  .filter((p) => !p.isPreviewOnly)
+  .reduce((sum, p) => sum + p.price, 0)
