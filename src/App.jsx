@@ -2,9 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   donationParts,
   sampleDonors,
-  totalGoal,
   tiers,
 } from './data/donationParts.js'
+
+// Meta que ve el usuario en el sitio. Independiente del costo real sumado
+// de las piezas (que cambia cuando se agregan/dividen piezas).
+const DISPLAY_GOAL = 6_000_000
 import {
   fetchDonations,
   insertDonation,
@@ -103,11 +106,11 @@ export default function App() {
     const totalParts = realParts.length
     return {
       raised,
-      goal: totalGoal,
+      goal: DISPLAY_GOAL,
       donorsCount: donors.length,
       donatedParts,
       totalParts,
-      percent: Math.min(100, Math.round((raised / totalGoal) * 100)),
+      percent: Math.min(100, Math.round((raised / DISPLAY_GOAL) * 100)),
     }
   }, [donors, partsWithStatus])
 
@@ -417,27 +420,26 @@ export default function App() {
           <SectionHeader
             eyebrow="Donación empresas"
             title="¿Tu empresa quiere ser parte del salón?"
-            subtitle="Las empresas que aporten desde $250.000 verán su logo en el modelo 3D del salón, sobre la pieza apadrinada."
+            subtitle="Las empresas que aporten verán su logo en el modelo 3D del salón, sobre la pieza apadrinada."
           />
-          <div className="mt-6 relative">
-            <div className="tp-card p-8 sm:p-10 grayscale opacity-60 pointer-events-none select-none">
-              <div className="flex flex-col items-center text-center gap-3">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-stone-200 text-3xl">
-                  🏢
-                </span>
-                <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-600">
-                  Donaciones de empresas
-                </h3>
-                <p className="text-slate-500 max-w-md text-sm">
-                  Pronto las empresas podrán apadrinar paneles o piezas de
-                  techo del salón y dejar su logo visible en el modelo 3D.
-                </p>
-              </div>
-            </div>
-            <div className="absolute top-4 right-4 inline-flex items-center gap-2 rounded-full bg-amber-100 border border-amber-300 px-4 py-2 text-amber-800 font-bold text-sm uppercase tracking-wider shadow-tp-soft">
-              <span className="inline-block h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              Próximamente
-            </div>
+          <div className="mt-6 tp-card p-8 sm:p-10 text-center">
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-tp-blue/10 text-3xl mb-4">
+              🏢
+            </span>
+            <h3 className="font-display text-xl sm:text-2xl font-bold text-tp-blue-dark">
+              ¿Tienes una empresa y quieres aportar?
+            </h3>
+            <p className="text-slate-600 max-w-md mx-auto mt-3 leading-relaxed">
+              Escríbenos a{' '}
+              <a
+                href="mailto:sanrafaeltp@gmail.com?subject=Donaci%C3%B3n%20empresa%20%C2%B7%20Pon%20tu%20ladrillo"
+                className="font-bold text-tp-red hover:underline"
+              >
+                sanrafaeltp@gmail.com
+              </a>{' '}
+              y coordinamos un aporte personalizado para tu empresa, con tu
+              logo visible en el modelo del salón.
+            </p>
           </div>
         </section>
 

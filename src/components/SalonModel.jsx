@@ -645,13 +645,11 @@ function Piece({
       : '#94a3b8'
   const filledEdgeColor = isFlash
     ? '#10b981'
-    : isFull
-      ? isHovered
+    : isHovered
+      ? isFull
         ? '#134285'
-        : '#3f3f46'
-      : isHovered
-        ? '#D6312A'
-        : '#A91F1B'
+        : '#D6312A'
+      : '#3f3f46' // gris oscuro por defecto, tanto parcial como completa
 
   const pointerHandlers = {
     onPointerOver: (e) => {

@@ -368,88 +368,89 @@ function buildNailBoxes() {
 }
 
 function buildPanels() {
-  // 12 paneles enteros de $250.000 cada uno (sin subdividir).
-  return [
-    // Muro frontal (z = +3)
+  // Paneles P1-P6 (frontales y traseros) divididos en 2 mitades verticales c/u.
+  // Cada mitad: 1.665 m de ancho × 3 m alto × 0.15 m, $150.000.
+  const PANEL_W = 3.33
+  const PANEL_H = 3
+  const PANEL_T = 0.15
+  const HALF_W = PANEL_W / 2
+  const HALF_OFFSET = PANEL_W / 4 // desfase del centro de cada mitad
+
+  const bigBases = [
     {
-      id: 'P1',
-      name: 'Panel P1 · Frontal izquierdo',
-      description: 'Muro de madera al costado de la entrada, con ventana.',
-      tier: 'panel',
-      price: 150000,
-      shape: 'panel',
+      base: 'P1',
+      label: 'Frontal izquierdo',
       position: [-3.33, 1.6, 3],
-      rotation: [0, 0, 0],
-      size: [3.33, 3, 0.15],
-      color: WOOD,
       hasWindow: true,
     },
     {
-      id: 'P2',
-      name: 'Panel P2 · Frontal centro (entrada)',
-      description: 'Panel central donde se monta la puerta principal.',
-      tier: 'panel',
-      price: 150000,
-      shape: 'panel',
+      base: 'P2',
+      label: 'Frontal centro (entrada)',
       position: [0, 1.6, 3],
-      rotation: [0, 0, 0],
-      size: [3.33, 3, 0.15],
-      color: WOOD,
       excludeCompanyLogo: true,
     },
     {
-      id: 'P3',
-      name: 'Panel P3 · Frontal derecho',
-      description: 'Panel del frente con ventana hacia la calle.',
-      tier: 'panel',
-      price: 150000,
-      shape: 'panel',
+      base: 'P3',
+      label: 'Frontal derecho',
       position: [3.33, 1.6, 3],
-      rotation: [0, 0, 0],
-      size: [3.33, 3, 0.15],
-      color: WOOD,
       hasWindow: true,
     },
-    // Muro trasero (z = -3)
     {
-      id: 'P4',
-      name: 'Panel P4 · Trasero izquierdo',
-      description: 'Muro trasero con ventana hacia el patio.',
-      tier: 'panel',
-      price: 150000,
-      shape: 'panel',
+      base: 'P4',
+      label: 'Trasero izquierdo',
       position: [-3.33, 1.6, -3],
-      rotation: [0, 0, 0],
-      size: [3.33, 3, 0.15],
-      color: WOOD,
       hasWindow: true,
     },
     {
-      id: 'P5',
-      name: 'Panel P5 · Trasero centro',
-      description: 'Muro trasero central.',
-      tier: 'panel',
-      price: 150000,
-      shape: 'panel',
+      base: 'P5',
+      label: 'Trasero centro',
       position: [0, 1.6, -3],
-      rotation: [0, 0, 0],
-      size: [3.33, 3, 0.15],
-      color: WOOD,
       hasWindow: true,
     },
     {
-      id: 'P6',
-      name: 'Panel P6 · Trasero derecho',
-      description: 'Muro trasero al fondo del salón.',
+      base: 'P6',
+      label: 'Trasero derecho',
+      position: [3.33, 1.6, -3],
+      hasWindow: true,
+    },
+  ]
+
+  const halves = []
+  bigBases.forEach((p) => {
+    // Mitad izquierda
+    halves.push({
+      id: `${p.base}-1`,
+      name: `Panel ${p.base} · ${p.label} (mitad izquierda)`,
+      description: 'Mitad izquierda del muro de madera.',
       tier: 'panel',
       price: 150000,
       shape: 'panel',
-      position: [3.33, 1.6, -3],
+      position: [p.position[0] - HALF_OFFSET, p.position[1], p.position[2]],
       rotation: [0, 0, 0],
-      size: [3.33, 3, 0.15],
+      size: [HALF_W, PANEL_H, PANEL_T],
       color: WOOD,
-      hasWindow: true,
-    },
+      ...(p.hasWindow ? { hasWindow: true } : {}),
+      ...(p.excludeCompanyLogo ? { excludeCompanyLogo: true } : {}),
+    })
+    // Mitad derecha
+    halves.push({
+      id: `${p.base}-2`,
+      name: `Panel ${p.base} · ${p.label} (mitad derecha)`,
+      description: 'Mitad derecha del muro de madera.',
+      tier: 'panel',
+      price: 150000,
+      shape: 'panel',
+      position: [p.position[0] + HALF_OFFSET, p.position[1], p.position[2]],
+      rotation: [0, 0, 0],
+      size: [HALF_W, PANEL_H, PANEL_T],
+      color: WOOD,
+      ...(p.hasWindow ? { hasWindow: true } : {}),
+      ...(p.excludeCompanyLogo ? { excludeCompanyLogo: true } : {}),
+    })
+  })
+
+  return [
+    ...halves,
     // Muros laterales (cada lado dividido en 3 paneles de 2m)
     {
       id: 'P7',
